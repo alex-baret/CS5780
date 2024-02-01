@@ -61,30 +61,29 @@ void SystemClock_Config(void);
   * @retval int
   */
 int main(void) {
-//HAL_Init(); // Reset of all peripherals, init the Flash and Systick
 	
 SystemClock_Config(); //Configure the system clock
 	
-/* This example uses HAL library calls to control
-the GPIOC peripheral. You’ll be redoing this code
-with hardware register access. */
-	
-//__HAL_RCC_GPIOC_CLK_ENABLE(); // Enable the GPIOC clock in the RCC //GIVEN
 
-// Enable the system clock for the C peripheral	//MY CODE
+// Enable the system clock for the C peripheral
 RCC->AHBENR |= (1 << 19);
 
-// Set up a configuration struct to pass to the initialization function
+// Enable the system clock for the A peripheral 
+RCC->AHBENR |= (1 << 17);
 
-	
-//GPIO_InitTypeDef initStr = {GPIO_PIN_7 | GPIO_PIN_6,
-//GPIO_MODE_OUTPUT_PP,
-//GPIO_SPEED_FREQ_LOW,
-//GPIO_NOPULL};
+//configure the USER button pin (PA0) to input mode (Clears the 1st and 2nd bits in the GPIOA_MODER register
+GPIOA->MODER &= ~(0b00000001);
+GPIOA->MODER &= ~(0b00000010);
 
-//HAL_GPIO_Init(GPIOC, &initStr); // Initialize pins PC8 & PC9
 
-//configure the LEDs Pins
+//configure the USER button pin to low speed
+GPIOA->OSPEEDR &= ~(0b00000001);
+
+//Enable the pull-down resistor for the USER button pin
+GPIOA->PUPDR |= (1 << 1);
+GPIOA->PUPDR &= ~(0b00000001);
+
+//configure the LEDs Pins 
 GPIOC->MODER |= (1 <<12); //setting PC6 to general output 
 GPIOC->MODER |= (1 <<14); //setting PC7 to general output 
 GPIOC->MODER |= (1 <<16); //setting PC8 to general output
@@ -105,22 +104,37 @@ GPIOC->PUPDR |= (0 <<14); //setting PC7 to to no pull-up/down resistors
 GPIOC->PUPDR |= (0 <<16); //setting PC8 to to no pull-up/down resistors
 GPIOC->PUPDR |= (0 <<18); //setting PC9 to to no pull-up/down resistors
 
-//HAL_GPIO_WritePin(GPIOC, GPIO_PIN_7, GPIO_PIN_SET); // Start PC8 high
+// Setting Pins initial states
 GPIOC->ODR |= (1 << 6); //setting pin 6 to high
-GPIOC->ODR |= (0 << 7); //setting pin 7 to low
+GPIOC->ODR |= (1 << 7); //setting pin 7 to low
 
 
+uint32_t debouncer = 0;
 
 while (1) {
-	HAL_Delay(200); // Delay 200ms
+		HAL_Delay(1); // Delay 200ms
 	
-	// Toggle the output state of both PC8 and PC9
-	//HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_7 | GPIO_PIN_6);
+	debouncer = (debouncer << 1); // Always shift every loop iteration
 	
-	
-	GPIOC->ODR ^= 0b001000000; // Inverts the 6th
-	GPIOC->ODR ^= 0b010000000; // Inverts the 7th
-}
+	if (GPIOA->IDR & 0x1) { // If input signal is set/high
+		debouncer |= 0x01; // Set lowest bit of bit-vector
+			//		GPIOC->ODR ^= 0b001000000; // Inverts the 6th
+		//	GPIOC->ODR ^= 0b010000000; // Inverts the 7th
+	}
+	if (debouncer == 0xFFFFFFFF) {
+		// This code triggers repeatedly when button is steady high!
+	}
+	if (debouncer == 0x00000000) {
+	// This code triggers repeatedly when button is steady low!
+	}
+	if (debouncer == 0x7FFFFFFF) {
+	// This code triggers only once when transitioning to steady high!
+		GPIOC->ODR ^= 0b001000000; // Inverts the 6th
+			GPIOC->ODR ^= 0b010000000; // Inverts the 7th
+	}
+	// When button is bouncing the bit-vector value is random since bits are set when the button is high and not when it bounces low.
+
+	}
 }
 
 /**
