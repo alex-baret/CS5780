@@ -106,7 +106,9 @@ GPIOC->PUPDR |= (0 <<18); //setting PC9 to to no pull-up/down resistors
 
 // Setting Pins initial states
 GPIOC->ODR |= (1 << 6); //setting pin 6 to high
-GPIOC->ODR |= (1 << 7); //setting pin 7 to low
+GPIOC->ODR |= (1 << 7); //setting pin 7 to high
+GPIOC->ODR |= (1 << 8); //setting pin 8 to high
+GPIOC->ODR |= (1 << 9); //setting pin 9 to high
 
 
 uint32_t debouncer = 0;
@@ -131,6 +133,8 @@ while (1) {
 	// This code triggers only once when transitioning to steady high!
 		GPIOC->ODR ^= 0b001000000; // Inverts the 6th
 			GPIOC->ODR ^= 0b010000000; // Inverts the 7th
+				GPIOC->ODR ^= 0b100000000; // Inverts the 8th
+			GPIOC->ODR ^= 0b1000000000; // Inverts the 9th
 	}
 	// When button is bouncing the bit-vector value is random since bits are set when the button is high and not when it bounces low.
 
