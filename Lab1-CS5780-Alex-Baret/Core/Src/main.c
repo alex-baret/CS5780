@@ -105,14 +105,14 @@ GPIOC->PUPDR |= (0 <<16); //setting PC8 to to no pull-up/down resistors
 GPIOC->PUPDR |= (0 <<18); //setting PC9 to to no pull-up/down resistors
 
 // Setting Pins initial states
-GPIOC->ODR |= (0 << 6); //setting pin 6 to high
+GPIOC->ODR |= (0 << 6); //setting pin 6 to low
 GPIOC->ODR |= (1 << 7); //setting pin 7 to high
 
 
 uint32_t debouncer = 0;
 
 while (1) {
-		HAL_Delay(1); // Delay 200ms
+		HAL_Delay(1); // Delay 1ms
 	
 	debouncer = (debouncer << 1); // Always shift every loop iteration
 	
