@@ -1,0 +1,8 @@
+1) What are the GPIO control registers that the lab mentions? Briefly describe each of their functions.
+ -> MODER: Used to select the I/O mode (input, output, AF, analog)
+ -> OTYPER: Used to select the output type (push-pull or open-drain)
+ -> OSPEEDR: Used to select the speed (low,medium,high)
+ -> PUPDR: Used to select the pull-up/pull-down whatever the I/O direction
+ 
+ 2) What values would you want to write to the bits controlling a pin in the GPIOx_MODER register in order to set it to analog mode?
+ -> 
