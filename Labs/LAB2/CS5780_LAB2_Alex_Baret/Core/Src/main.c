@@ -48,6 +48,7 @@
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 void EXTI0_1_IRQHandler (void);
+volatile int counter = 0; 
 
 /* USER CODE BEGIN PFP */
 
@@ -168,6 +169,24 @@ while (1) {
 	//GPIOC->ODR ^= 0b010000000; // Inverts the 7th
 }
   /* USER CODE END 3 */
+}
+
+/**
+* @brief This function handles the EXTI0_IRQn
+*/
+void EXTI0_1_IRQHandler (void){
+		EXTI->PR |= (0 << 0);
+	HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_8 | GPIO_PIN_9);
+
+	while (counter < 1500000){
+		counter +=1;
+	}
+	counter = 0;
+	
+	HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_8 | GPIO_PIN_9);
+
+	
+
 }
 
 /**

@@ -3,7 +3,7 @@
 <title>Static Call Graph - [CS5780_LAB2_Alex_Baret\CS5780_LAB2_Alex_Baret.axf]</title></head>
 <body><HR>
 <H1>Static Call Graph for image CS5780_LAB2_Alex_Baret\CS5780_LAB2_Alex_Baret.axf</H1><HR>
-<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 6210000: Last Updated: Wed Feb  7 17:28:45 2024
+<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 6210000: Last Updated: Wed Feb  7 17:49:31 2024
 <BR><P>
 <H3>Maximum Stack Usage =        136 bytes + Unknown(Functions without stacksize, Cycles, Untraceable Function Pointers)</H3><H3>
 Call chain for Maximum Stack Depth:</H3>
@@ -31,7 +31,7 @@ Function Pointers
  <LI><a href="#[f]">DMA1_Channel1_IRQHandler</a> from startup_stm32f072xb.o(.text) referenced from startup_stm32f072xb.o(RESET)
  <LI><a href="#[10]">DMA1_Channel2_3_IRQHandler</a> from startup_stm32f072xb.o(.text) referenced from startup_stm32f072xb.o(RESET)
  <LI><a href="#[11]">DMA1_Channel4_5_6_7_IRQHandler</a> from startup_stm32f072xb.o(.text) referenced from startup_stm32f072xb.o(RESET)
- <LI><a href="#[b]">EXTI0_1_IRQHandler</a> from stm32f0xx_it.o(.text.EXTI0_1_IRQHandler) referenced from startup_stm32f072xb.o(RESET)
+ <LI><a href="#[b]">EXTI0_1_IRQHandler</a> from main.o(.text.EXTI0_1_IRQHandler) referenced from startup_stm32f072xb.o(RESET)
  <LI><a href="#[c]">EXTI2_3_IRQHandler</a> from startup_stm32f072xb.o(.text) referenced from startup_stm32f072xb.o(RESET)
  <LI><a href="#[d]">EXTI4_15_IRQHandler</a> from startup_stm32f072xb.o(.text) referenced from startup_stm32f072xb.o(RESET)
  <LI><a href="#[9]">FLASH_IRQHandler</a> from startup_stm32f072xb.o(.text) referenced from startup_stm32f072xb.o(RESET)
@@ -384,8 +384,8 @@ Global Symbols
 
 <P><STRONG><a name="[7a]"></a>__semihosting_library_function</STRONG> (Thumb, 0 bytes, Stack size unknown bytes, indicate_semi.o(.text), UNUSED)
 
-<P><STRONG><a name="[b]"></a>EXTI0_1_IRQHandler</STRONG> (Thumb, 20 bytes, Stack size 8 bytes, stm32f0xx_it.o(.text.EXTI0_1_IRQHandler))
-<BR><BR>[Stack]<UL><LI>Max Depth = 8<LI>Call Chain = EXTI0_1_IRQHandler
+<P><STRONG><a name="[b]"></a>EXTI0_1_IRQHandler</STRONG> (Thumb, 96 bytes, Stack size 16 bytes, main.o(.text.EXTI0_1_IRQHandler))
+<BR><BR>[Stack]<UL><LI>Max Depth = 16<LI>Call Chain = EXTI0_1_IRQHandler
 </UL>
 <BR>[Calls]<UL><LI><a href="#[3f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_GPIO_TogglePin
 </UL>

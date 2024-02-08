@@ -138,17 +138,7 @@ void SysTick_Handler(void)
   /* USER CODE END SysTick_IRQn 1 */
 }
 
-/**
-* @brief This function handles the EXTI0_IRQn
-*/
-void EXTI0_1_IRQHandler (void){
-	
-	//GPIOC->ODR ^= 0b100000000; // Inverts the 8th
-	//GPIOC->ODR ^= (1 << 9); // Inverts the 9th
-	HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_8 | GPIO_PIN_9);
 
-	EXTI->PR |= (0 << 0);
-}
 
 /******************************************************************************/
 /* STM32F0xx Peripheral Interrupt Handlers                                    */
