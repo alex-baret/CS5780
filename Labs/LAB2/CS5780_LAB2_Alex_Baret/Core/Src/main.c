@@ -47,6 +47,8 @@
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
+void EXTI0_1_IRQHandler (void);
+
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -90,13 +92,6 @@ SystemClock_Config(); //Configure the system clock
 // Enable the system clock for the A peripheral 
 RCC->AHBENR |= (1 << 17);
 
-//configure the USER button pin (PA0) to input mode (Clears the 1st and 2nd bits in the GPIOA_MODER register
-GPIOA->MODER &= ~(0b00000001);
-GPIOA->MODER &= ~(0b00000010);
-
-
-//configure the USER button pin to low speed
-GPIOA->OSPEEDR &= ~(0b00000001);
 
 //Enable the pull-down resistor for the USER button pin
 GPIOA->PUPDR |= (1 << 1);
@@ -126,10 +121,29 @@ GPIOC->PUPDR |= (0 <<18); //setting PC9 to to no pull-up/down resistors
 // Setting Pins initial states
 GPIOC->ODR |= (0 << 6); //setting pin 6 to high
 GPIOC->ODR |= (0 << 7); //setting pin 7 to high
-GPIOC->ODR |= (0 << 8); //setting pin 8 to high
-GPIOC->ODR |= (1 << 9); //setting pin 9 to high
+GPIOC->ODR |= (1 << 8); //setting pin 8 to high
+GPIOC->ODR |= (0 << 9); //setting pin 9 to low
+
+// Configuring the EXTI
+EXTI->IMR |= (1 << 0);
+EXTI->RTSR |= (1 << 0); //rising edge trigger
+
+SYSCFG->EXTICR[0] = 0b0; // enabling interrupt generation for PA0
+
+// Enable the peripheral clock for SYSCFG
+RCC->APB2ENR |= (1 << 0);
+
+
+//configure the USER button pin (PA0) to input mode (Clears the 1st and 2nd bits in the GPIOA_MODER register
+GPIOA->MODER &= ~(0b00000001);
+GPIOA->MODER &= ~(0b00000010);
+//configure the USER button pin to low speed
+GPIOA->OSPEEDR &= ~(0b00000001);
 	
 	
+//Enable and Set Priority of the EXTI Interrupt
+NVIC_EnableIRQ(EXTI0_1_IRQn);
+NVIC_SetPriority(EXTI0_1_IRQn,1);
 
   /* USER CODE BEGIN SysInit */
 

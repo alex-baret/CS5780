@@ -3,9 +3,9 @@ cs5780_lab2_alex_baret/system_stm32f0xx.o: ..\Core\Src\system_stm32f0xx.c \
   ..\Drivers\CMSIS\Device\ST\STM32F0xx\Include\stm32f072xb.h \
   ..\Drivers\CMSIS\Include\core_cm0.h \
   C:\Keil_v5\ARM\ARMCLANG\include\stdint.h \
-  C:\Users\Alex\Documents\CS5780\LAB2\CS5780_LAB2_Alex_Baret\Drivers\CMSIS\Include\cmsis_version.h \
-  C:\Users\Alex\Documents\CS5780\LAB2\CS5780_LAB2_Alex_Baret\Drivers\CMSIS\Include\cmsis_compiler.h \
-  C:\Users\Alex\Documents\CS5780\LAB2\CS5780_LAB2_Alex_Baret\Drivers\CMSIS\Include\cmsis_armclang.h \
+  C:\Users\Alex\Documents\CS5780\LABS\Labs\LAB2\CS5780_LAB2_Alex_Baret\Drivers\CMSIS\Include\cmsis_version.h \
+  C:\Users\Alex\Documents\CS5780\LABS\Labs\LAB2\CS5780_LAB2_Alex_Baret\Drivers\CMSIS\Include\cmsis_compiler.h \
+  C:\Users\Alex\Documents\CS5780\LABS\Labs\LAB2\CS5780_LAB2_Alex_Baret\Drivers\CMSIS\Include\cmsis_armclang.h \
   C:\Keil_v5\ARM\ARMCLANG\include\arm_compat.h \
   C:\Keil_v5\ARM\ARMCLANG\include\arm_acle.h \
   ..\Drivers\CMSIS\Device\ST\STM32F0xx\Include\system_stm32f0xx.h \
