@@ -144,7 +144,11 @@ GPIOA->OSPEEDR &= ~(0b00000001);
 	
 //Enable and Set Priority of the EXTI Interrupt
 NVIC_EnableIRQ(EXTI0_1_IRQn);
+//NVIC_SetPriority(EXTI0_1_IRQn,1); UNCOMMENT THIS TO DO THE LOGIC ANALYZER TEST
 NVIC_SetPriority(EXTI0_1_IRQn,1);
+
+// Set the SysTick interrupt priority to 2 (medium priority)
+NVIC_SetPriority(SysTick_IRQn,2);
 
   /* USER CODE BEGIN SysInit */
 
@@ -175,7 +179,8 @@ while (1) {
 * @brief This function handles the EXTI0_IRQn
 */
 void EXTI0_1_IRQHandler (void){
-		EXTI->PR |= (0 << 0);
+	
+	EXTI->PR |= (0 << 0);
 	HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_8 | GPIO_PIN_9);
 
 	while (counter < 1500000){
