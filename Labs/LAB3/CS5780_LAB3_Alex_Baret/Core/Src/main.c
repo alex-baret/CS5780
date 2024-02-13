@@ -62,30 +62,85 @@ void SystemClock_Config(void);
   */
 int main(void)
 {
-  HAL_Init(); // Reset of all peripherals, init the Flash and Systick
+ // HAL_Init(); // Reset of all peripherals, init the Flash and Systick
 	
-	SystemClock_Config(); //Configure the system clock
+	//SystemClock_Config(); //Configure the system clock
 	
-	/* This example uses HAL library calls to control
-	the GPIOC peripheral. You’ll be redoing this code
-	with hardware register access. */
-	__HAL_RCC_GPIOC_CLK_ENABLE(); // Enable the GPIOC clock in the RCC
-	
-	// Set up a configuration struct to pass to the initialization function
-	GPIO_InitTypeDef initStr = {GPIO_PIN_8 | GPIO_PIN_9,
-	GPIO_MODE_OUTPUT_PP,
-	GPIO_SPEED_FREQ_LOW,
-	GPIO_NOPULL};
 
-	HAL_GPIO_Init(GPIOC, &initStr); // Initialize pins PC8 & PC9
+// Enable the system clock for the C peripheral
+RCC->AHBENR |= (1 << 19);
 
-	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, GPIO_PIN_SET); // Start PC8 high
+// Enable the system clock for the A peripheral 
+//RCC->AHBENR |= (1 << 17);
+	
+//configure the LEDs Pins 
+GPIOC->MODER |= (1 <<12); //setting PC6 to general output 
+GPIOC->MODER |= (1 <<14); //setting PC7 to general output 
+GPIOC->MODER |= (1 <<16); //setting PC8 to general output
+GPIOC->MODER |= (1 <<18); //setting PC9 to general output
+
+GPIOC->OTYPER |= (0 << 7);//setting PC6 to push/pull output 
+GPIOC->OTYPER |= (0 << 8);//setting PC7 to push/pull output 
+GPIOC->OTYPER &= ~(0 << 9);//setting PC8 to push/pull output
+GPIOC->OTYPER &= ~(0 << 10);//setting PC9 to push/pull output
+
+GPIOC->OSPEEDR |= (0 <<12); //setting PC6 to low speed
+GPIOC->OSPEEDR |= (0 <<14); //setting PC7 to low speed
+GPIOC->OSPEEDR &= ~(0 <<16); //setting PC8 to low speed
+GPIOC->OSPEEDR &= ~(0 <<18); //setting PC9 to low speed
+
+GPIOC->PUPDR |= (0 <<12); //setting PC6 to to no pull-up/down resistors
+GPIOC->PUPDR |= (0 <<14); //setting PC7 to to no pull-up/down resistors
+GPIOC->PUPDR &= ~(0 <<16); //setting PC8 to to no pull-up/down resistors
+GPIOC->PUPDR &= ~(0 <<18); //setting PC9 to to no pull-up/down resistors
+
+// Setting Pins initial states
+GPIOC->ODR |= (0 << 6); //setting pin 6 to high
+GPIOC->ODR |= (0 << 7); //setting pin 7 to high
+GPIOC->ODR |= (1 << 8); //setting pin 8 to high
+GPIOC->ODR &= ~(0 << 9); //setting pin 9 to high
+	
+	//Enable the peripheral clock for TIM2
+	RCC->APB1ENR |= RCC_APB1ENR_TIM2EN;
+	
+	//Set the PSC to 7999 to count 1ms/timer count
+	TIM2->PSC = 7999;
+	
+	//Set the ARR to 250 to count up to 250ms
+	TIM2->ARR = 0b11111010;
+	
+	//Configure the timer to generate an interrupt on the UEV event (enable the update interrupt)
+	TIM2->DIER |= (1 << 0);
+	
+	//Enable the timer?
+	TIM2->CR1 |= (1 << 0);
+
+	//Enable and Set Priority of the TIM2 Interrupt
+	NVIC_EnableIRQ(TIM2_IRQn);
+	
+	
+
+
 
 	while (1) {
-		HAL_Delay(200); // Delay 200ms
+		
+		//HAL_Delay(200); // Delay 200ms
+		
 		// Toggle the output state of both PC8 and PC9
-		HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_8 | GPIO_PIN_9);
+		//HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_8 | GPIO_PIN_9);
 	}
+}
+
+/**
+*@brief This function handles the TIM2_IRQn
+*/
+void TIM2_IRQHandler (void){
+		
+	// Toggle the output state of both PC8 and PC9
+	GPIOC->ODR ^= 0b100000000; // Inverts the 8th
+	GPIOC->ODR ^= 0b1000000000; // Inverts the 9th
+	TIM2->SR &= ~(1 << 0);
+	
 }
 
 /**
