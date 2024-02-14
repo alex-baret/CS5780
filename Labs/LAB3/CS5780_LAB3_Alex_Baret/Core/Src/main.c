@@ -96,7 +96,7 @@ GPIOC->PUPDR &= ~(0 <<18); //setting PC9 to to no pull-up/down resistors
 //GPIOC->ODR |= (0 << 6); //setting pin 6 to high
 //GPIOC->ODR |= (0 << 7); //setting pin 7 to high
 GPIOC->ODR |= (1 << 8); //setting pin 8 to high
-GPIOC->ODR &= ~(0 << 9); //setting pin 9 to high
+GPIOC->ODR &= ~(0 << 9); //setting pin 9 to low
 	
 	//Enable the peripheral clock for TIM2
 	RCC->APB1ENR |= RCC_APB1ENR_TIM2EN;
