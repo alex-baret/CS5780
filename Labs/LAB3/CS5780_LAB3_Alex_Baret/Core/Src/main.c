@@ -70,33 +70,31 @@ int main(void)
 // Enable the system clock for the C peripheral
 RCC->AHBENR |= (1 << 19);
 
-// Enable the system clock for the A peripheral 
-//RCC->AHBENR |= (1 << 17);
 	
 //configure the LEDs Pins 
-GPIOC->MODER |= (1 <<12); //setting PC6 to general output 
-GPIOC->MODER |= (1 <<14); //setting PC7 to general output 
+//GPIOC->MODER |= (1 <<12); //setting PC6 to general output 
+//GPIOC->MODER |= (1 <<14); //setting PC7 to general output 
 GPIOC->MODER |= (1 <<16); //setting PC8 to general output
 GPIOC->MODER |= (1 <<18); //setting PC9 to general output
 
-GPIOC->OTYPER |= (0 << 7);//setting PC6 to push/pull output 
-GPIOC->OTYPER |= (0 << 8);//setting PC7 to push/pull output 
+//GPIOC->OTYPER |= (0 << 7);//setting PC6 to push/pull output 
+//GPIOC->OTYPER |= (0 << 8);//setting PC7 to push/pull output 
 GPIOC->OTYPER &= ~(0 << 9);//setting PC8 to push/pull output
 GPIOC->OTYPER &= ~(0 << 10);//setting PC9 to push/pull output
 
-GPIOC->OSPEEDR |= (0 <<12); //setting PC6 to low speed
-GPIOC->OSPEEDR |= (0 <<14); //setting PC7 to low speed
+//GPIOC->OSPEEDR |= (0 <<12); //setting PC6 to low speed
+//GPIOC->OSPEEDR |= (0 <<14); //setting PC7 to low speed
 GPIOC->OSPEEDR &= ~(0 <<16); //setting PC8 to low speed
 GPIOC->OSPEEDR &= ~(0 <<18); //setting PC9 to low speed
 
-GPIOC->PUPDR |= (0 <<12); //setting PC6 to to no pull-up/down resistors
-GPIOC->PUPDR |= (0 <<14); //setting PC7 to to no pull-up/down resistors
+//GPIOC->PUPDR |= (0 <<12); //setting PC6 to to no pull-up/down resistors
+//GPIOC->PUPDR |= (0 <<14); //setting PC7 to to no pull-up/down resistors
 GPIOC->PUPDR &= ~(0 <<16); //setting PC8 to to no pull-up/down resistors
 GPIOC->PUPDR &= ~(0 <<18); //setting PC9 to to no pull-up/down resistors
 
 // Setting Pins initial states
-GPIOC->ODR |= (0 << 6); //setting pin 6 to high
-GPIOC->ODR |= (0 << 7); //setting pin 7 to high
+//GPIOC->ODR |= (0 << 6); //setting pin 6 to high
+//GPIOC->ODR |= (0 << 7); //setting pin 7 to high
 GPIOC->ODR |= (1 << 8); //setting pin 8 to high
 GPIOC->ODR &= ~(0 << 9); //setting pin 9 to high
 	
@@ -118,9 +116,54 @@ GPIOC->ODR &= ~(0 << 9); //setting pin 9 to high
 	//Enable and Set Priority of the TIM2 Interrupt
 	NVIC_EnableIRQ(TIM2_IRQn);
 	
+	// ======= TIM3 ======= //
 	
+	//Enable the peripheral clock for TIM3
+	RCC->APB1ENR |= RCC_APB1ENR_TIM3EN;
+	
+	//Set the PSC to 399 to count 0.05ms/timer count
+	TIM3->PSC = 399;
+	
+	//Set the ARR to 25 to count up to 1.25ms
+	TIM3->ARR = 25;
+	
+	//Configure the timer to generate an interrupt on the UEV event (enable the update interrupt)
+	//TIM3->DIER |= (1 << 0);
+	
+	//Set CC1S[1:0] to output (clearing the 0th and 1st bits)
+	TIM3->CCMR1 &= ~((1 << 1) | (1 << 0));
+	
+	//Set CC2S 9 and 8 to output (clearing the 9th and 8th bits)
+	TIM3->CCMR1 &= ~((1 << 9) | (1 << 8));
+	
+	//Set output channel 1 of OC1M to PWM Mode 2 (setting bits 6-4 to 111)
+	TIM3->CCMR1 |= (1 << 6) | (1 << 5) | (1 << 4);
+	
+		//Set output channel 2 of OC2M to PWM Mode 1 (setting bits 14-12 to 111)
+	TIM3->CCMR1 |= (1 << 14) | (1 << 13) | (0 << 12);
+	
+	//Enable output compare preload for both channels
+	TIM3->CCMR1 |= (1 << 11); //OC2PE
+	TIM3->CCMR1 |= (1 << 3); //OC1PE
+	
+	//Set the output enable bits for channels 1 & 2 in the CCER register
+	TIM3->CCER |= (1 << 0); //setting the 0th bit for CC1E
+	TIM3->CCER |= (1 << 4); //setting the 4th bit for CC1E
 
+	//Set the capture/compare registers (CCRx) for both channels to 20% of ARR value (5)
+	TIM3->CCR1 = 0x5;
+	TIM3->CCR2 = 0x5;
+	
+	/* (2) Select alternate function mode on GPIOC pins PC6 and PC7 */
+GPIOC->MODER = (GPIOC->MODER & ~(GPIO_MODER_MODER6 | GPIO_MODER_MODER7)) | GPIO_MODER_MODER6_1
+| GPIO_MODER_MODER7_1; /* (2) */
+/* (3) Select AF0 on PC6 in AFRL for TIM3_CH1 */
+GPIOC->AFR[0] |= 0x00 << GPIO_AFRL_AFRL6_Pos; /* (3) */
+/* (3) Select AF0 on PC7 in AFRL for TIM3_CH2 */
+GPIOC->AFR[0] |= 0x00 << GPIO_AFRL_AFRL7_Pos; /* (3) */
 
+	//Enable the timer?
+	TIM3->CR1 |= (1 << 0);
 
 	while (1) {
 		
