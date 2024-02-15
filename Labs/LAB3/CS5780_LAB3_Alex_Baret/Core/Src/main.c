@@ -151,8 +151,8 @@ GPIOC->ODR &= ~(0 << 9); //setting pin 9 to low
 	TIM3->CCER |= (1 << 4); //setting the 4th bit for CC1E
 
 	//Set the capture/compare registers (CCRx) for both channels to 20% of ARR value (5)
-	TIM3->CCR1 = 0x5;
-	TIM3->CCR2 = 0x5;
+	TIM3->CCR1 = 5;
+	TIM3->CCR2 = 5;
 	
 	/* (2) Select alternate function mode on GPIOC pins PC6 and PC7 */
 GPIOC->MODER = (GPIOC->MODER & ~(GPIO_MODER_MODER6 | GPIO_MODER_MODER7)) | GPIO_MODER_MODER6_1
