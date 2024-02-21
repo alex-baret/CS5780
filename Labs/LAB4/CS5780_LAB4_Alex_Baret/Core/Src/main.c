@@ -78,17 +78,19 @@ int main(void)
   /* Configure the system clock */
   SystemClock_Config();
 
-  /* USER CODE BEGIN SysInit */
 
-  /* USER CODE END SysInit */
+/* This sequence select AF4 for GPIOA10 and 11.  */
+/* (1) Enable the peripheral clock of GPIOB */
+RCC->AHBENR |= RCC_AHBENR_GPIOBEN;
+	/* (2) Select alternate function mode on GPIOB pins PC10 and PC11 */
+GPIOB->MODER = (GPIOB->MODER & ~(GPIO_MODER_MODER10 | GPIO_MODER_MODER11)) | GPIO_MODER_MODER10_1
+| GPIO_MODER_MODER11_1; /* (2) */
+/* (3) Select AF4 on PB10 in AFRH for USART3_TX*/
+GPIOC->AFR[1] |= 0x04 << GPIO_AFRH_AFSEL10_Pos;
+/* (4) Select AF4 on PB11 in AFRH for USART3_RX*/
+GPIOC->AFR[1] |= 0x04 << GPIO_AFRH_AFSEL11_Pos;
 
-  /* Initialize all configured peripherals */
-  /* USER CODE BEGIN 2 */
 
-  /* USER CODE END 2 */
-
-  /* Infinite loop */
-  /* USER CODE BEGIN WHILE */
   while (1)
   {
     /* USER CODE END WHILE */

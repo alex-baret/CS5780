@@ -1,0 +1,25 @@
+--cpu Cortex-M0
+"cs5780_lab4_alex_baret\startup_stm32f072xb.o"
+"cs5780_lab4_alex_baret\main.o"
+"cs5780_lab4_alex_baret\stm32f0xx_it.o"
+"cs5780_lab4_alex_baret\stm32f0xx_hal_msp.o"
+"cs5780_lab4_alex_baret\stm32f0xx_hal_tim.o"
+"cs5780_lab4_alex_baret\stm32f0xx_hal_tim_ex.o"
+"cs5780_lab4_alex_baret\stm32f0xx_hal_rcc.o"
+"cs5780_lab4_alex_baret\stm32f0xx_hal_rcc_ex.o"
+"cs5780_lab4_alex_baret\stm32f0xx_hal.o"
+"cs5780_lab4_alex_baret\stm32f0xx_hal_i2c.o"
+"cs5780_lab4_alex_baret\stm32f0xx_hal_i2c_ex.o"
+"cs5780_lab4_alex_baret\stm32f0xx_hal_gpio.o"
+"cs5780_lab4_alex_baret\stm32f0xx_hal_dma.o"
+"cs5780_lab4_alex_baret\stm32f0xx_hal_cortex.o"
+"cs5780_lab4_alex_baret\stm32f0xx_hal_pwr.o"
+"cs5780_lab4_alex_baret\stm32f0xx_hal_pwr_ex.o"
+"cs5780_lab4_alex_baret\stm32f0xx_hal_flash.o"
+"cs5780_lab4_alex_baret\stm32f0xx_hal_flash_ex.o"
+"cs5780_lab4_alex_baret\stm32f0xx_hal_exti.o"
+"cs5780_lab4_alex_baret\system_stm32f0xx.o"
+--strict --scatter "CS5780_LAB4_Alex_Baret\CS5780_LAB4_Alex_Baret.sct"
+--summary_stderr --info summarysizes --map --load_addr_map_info --xref --callgraph --symbols
+--info sizes --info totals --info unused --info veneers
+--list "CS5780_LAB4_Alex_Baret.map" -o CS5780_LAB4_Alex_Baret\CS5780_LAB4_Alex_Baret.axf
