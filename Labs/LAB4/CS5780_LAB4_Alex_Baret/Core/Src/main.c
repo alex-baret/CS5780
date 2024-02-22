@@ -58,7 +58,7 @@ void SystemClock_Config(void);
 
 void transmitChar(char c);
 void transmitString(char string[]);
-
+void receiveChar();
 
 
 
@@ -110,19 +110,83 @@ USART3->BRR = HAL_RCC_GetHCLKFreq() / 115200;
 USART3->CR1 = USART_CR1_TE | USART_CR1_UE; /* (2) */
 USART3->CR1 = USART_CR1_RXNEIE | USART_CR1_RE | USART_CR1_UE; /* (2) */
 
-char myChar = 'a'; 
+
+char c; 
 int numItrs = 0;
 char hello[] = "Hello World! "; 
+char errorMessage[] = "does not correspond to an LED.  Choose one of the following: 'R','G','B','O'.";
+int toggleCount = 0;
+int numItrs = 0;
+/* LED Pin configuration */
+
+// Enable the system clock for the C peripheral
+RCC->AHBENR |= (1 << 19);
+
+	
+//configure the LEDs Pins 
+GPIOC->MODER |= (1 <<12); //setting PC6 to general output 
+GPIOC->MODER |= (1 <<14); //setting PC7 to general output 
+GPIOC->MODER |= (1 <<16); //setting PC8 to general output
+GPIOC->MODER |= (1 <<18); //setting PC9 to general output
+
+GPIOC->OTYPER &= ~(0 << 7);//setting PC6 to push/pull output 
+GPIOC->OTYPER &= ~(0 << 8);//setting PC7 to push/pull output 
+GPIOC->OTYPER &= ~(0 << 9);//setting PC8 to push/pull output
+GPIOC->OTYPER &= ~(0 << 10);//setting PC9 to push/pull output
+
+GPIOC->OSPEEDR &= ~(0 <<12); //setting PC6 to low speed
+GPIOC->OSPEEDR &= ~(0 <<14); //setting PC7 to low speed
+GPIOC->OSPEEDR &= ~(0 <<16); //setting PC8 to low speed
+GPIOC->OSPEEDR &= ~(0 <<18); //setting PC9 to low speed
+
+GPIOC->PUPDR &= ~(0 <<12); //setting PC6 to to no pull-up/down resistors
+GPIOC->PUPDR &= ~(0 <<14); //setting PC7 to to no pull-up/down resistors
+GPIOC->PUPDR &= ~(0 <<16); //setting PC8 to to no pull-up/down resistors
+GPIOC->PUPDR &= ~(0 <<18); //setting PC9 to to no pull-up/down resistors
+
+// Setting Pins initial states
+GPIOC->ODR |= (1 << 6); //setting pin 6 to high
+GPIOC->ODR |= (1 << 7); //setting pin 7 to high
+GPIOC->ODR |= (1 << 8); //setting pin 8 to high
+GPIOC->ODR |= (1 << 9); //setting pin 9 to low
+
   while (1)
   {
-		if(numItrs < 1){
-    //transmitChar(myChar);
-		transmitString(hello);
+			if (USART_ISR_RXNE){
+					c = (uint8_t)(USART3->RDR); /* Receive data, clear flag */
+					transmitChar(c);
+			}
+			
+	//		if (c == 'r'){
+	//			transmitChar(c);
+	//			HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_6);
+	//		}
+			switch(c){
+				case 'r': //PC6
+					// Toggle the output state of PC6
+					transmitChar(c);
+					//HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_6);
+					break;
+		//		case 'g': //PC9
+					// Toggle the output state of PC9
+		//			HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_9);
+		//			break;
+		//		case 'b': //PC7
+					// Toggle the output state of PC7
+		//			HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_7);
+		//			break;
+		//		case 'o': //PC8
+					// Toggle the output state of PC8
+		//			HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_8);
+		//			break;
+		//		default:
+		//			transmitString(errorMessage);
+		//			break;
+		//	}
+			}
 		}
-		numItrs++;
-  }
-  /* USER CODE END 3 */
-}
+	}
+
 
 
 /**
