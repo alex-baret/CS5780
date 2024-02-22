@@ -67,10 +67,10 @@ void transmitChar(char c){
 }
 
 void transmitString(char string[]){
-		int index = 0;
-    while(index <= 11){
-			transmitChar(string[index]);
-			index++;
+		int idx = 0;
+    while(string[idx] != '\0'){
+			transmitChar(string[idx]);
+			idx++;
 		}
 }
 
