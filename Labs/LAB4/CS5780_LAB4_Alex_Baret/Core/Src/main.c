@@ -128,10 +128,10 @@ USART3->CR1 = USART_CR1_RXNEIE | USART_CR1_RE | USART_CR1_UE; /* (2) */
 
 char myChar = 'a'; 
 int numItrs = 0;
-char hello[] = "Hello World!"; 
+char hello[] = "Hello World! "; 
   while (1)
   {
-		if(numItrs < 5){
+		if(numItrs < 1){
     //transmitChar(myChar);
 		transmitString(hello);
 		}
