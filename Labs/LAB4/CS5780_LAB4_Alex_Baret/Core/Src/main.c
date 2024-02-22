@@ -56,9 +56,9 @@ void SystemClock_Config(void);
 
 /* USER CODE END 0 */
 
-void transmitChar(char c);
 
 void transmitChar(char c){
+	
 	while(!(USART3->ISR & USART_ISR_TXE)){
 	}
 	USART3->TDR = c;
@@ -90,31 +90,41 @@ int main(void)
   SystemClock_Config();
 
 
+//Enable peripheral clock for USART3
+RCC->APB1ENR |= RCC_APB1ENR_USART3EN;
+	
 /* This sequence select AF4 for GPIOA10 and 11.  */
 /* (1) Enable the peripheral clock of GPIOB */
 RCC->AHBENR |= RCC_AHBENR_GPIOBEN;
+
 	
 	/* (2) Select alternate function mode on GPIOB pins PC10 and PC11 */
 GPIOB->MODER = (GPIOB->MODER & ~(GPIO_MODER_MODER10 | GPIO_MODER_MODER11)) | GPIO_MODER_MODER10_1
 | GPIO_MODER_MODER11_1; /* (2) */
 
-/* (3) Select AF4 on PB10 in AFRH for USART3_TX*/
-//GPIOB->AFR[1] |= 0x04 << GPIO_AFRH_AFSEL10_Pos;
-/* (4) Select AF4 on PB11 in AFRH for USART3_RX*/
-//GPIOB->AFR[1] |= 0x04 << GPIO_AFRH_AFSEL11_Pos;
+//GPIOB->AFR[1] &= ~(0xF << 8);
+//GPIOB->AFR[1] &= ~(0xF << 12);
 
-GPIOB->AFR[1] |= (1 << 10) | (1 << 11);
+/* (3) Select AF4 on PB10 in AFRH for USART3_TX*/
+GPIOB->AFR[1] |= 0x04 << GPIO_AFRH_AFSEL10_Pos;
+/* (4) Select AF4 on PB11 in AFRH for USART3_RX*/
+GPIOB->AFR[1] |= 0x04 << GPIO_AFRH_AFSEL11_Pos;
+
+//GPIOB->AFR[1] |= (1 << 10) | (1 << 11);
 
 
 USART3->BRR = HAL_RCC_GetHCLKFreq() / 115200;
 USART3->CR1 = USART_CR1_TE | USART_CR1_UE; /* (2) */
 USART3->CR1 = USART_CR1_RXNEIE | USART_CR1_RE | USART_CR1_UE; /* (2) */
 
-
+char myChar = 'a';
+int numItrs = 0;
   while (1)
   {
-		char myChar = 'a';
+		if(numItrs < 5){
     transmitChar(myChar);
+		}
+		numItrs++;
   }
   /* USER CODE END 3 */
 }
