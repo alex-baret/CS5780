@@ -56,13 +56,22 @@ void SystemClock_Config(void);
 
 /* USER CODE END 0 */
 
+void transmitChar(char c);
+void transmitString(char string[]);
 
 void transmitChar(char c){
 	
 	while(!(USART3->ISR & USART_ISR_TXE)){
 	}
 	USART3->TDR = c;
-	
+}
+
+void transmitString(char string[]){
+		int index = 0;
+    while(index <= 11){
+			transmitChar(string[index]);
+			index++;
+		}
 }
 
 
@@ -117,12 +126,14 @@ USART3->BRR = HAL_RCC_GetHCLKFreq() / 115200;
 USART3->CR1 = USART_CR1_TE | USART_CR1_UE; /* (2) */
 USART3->CR1 = USART_CR1_RXNEIE | USART_CR1_RE | USART_CR1_UE; /* (2) */
 
-char myChar = 'a';
+char myChar = 'a'; 
 int numItrs = 0;
+char hello[] = "Hello World!"; 
   while (1)
   {
 		if(numItrs < 5){
-    transmitChar(myChar);
+    //transmitChar(myChar);
+		transmitString(hello);
 		}
 		numItrs++;
   }
