@@ -59,20 +59,7 @@ void SystemClock_Config(void);
 void transmitChar(char c);
 void transmitString(char string[]);
 
-void transmitChar(char c){
-	
-	while(!(USART3->ISR & USART_ISR_TXE)){
-	}
-	USART3->TDR = c;
-}
 
-void transmitString(char string[]){
-		int idx = 0;
-    while(string[idx] != '\0'){
-			transmitChar(string[idx]);
-			idx++;
-		}
-}
 
 
 
@@ -111,15 +98,12 @@ RCC->AHBENR |= RCC_AHBENR_GPIOBEN;
 GPIOB->MODER = (GPIOB->MODER & ~(GPIO_MODER_MODER10 | GPIO_MODER_MODER11)) | GPIO_MODER_MODER10_1
 | GPIO_MODER_MODER11_1; /* (2) */
 
-//GPIOB->AFR[1] &= ~(0xF << 8);
-//GPIOB->AFR[1] &= ~(0xF << 12);
 
 /* (3) Select AF4 on PB10 in AFRH for USART3_TX*/
 GPIOB->AFR[1] |= 0x04 << GPIO_AFRH_AFSEL10_Pos;
 /* (4) Select AF4 on PB11 in AFRH for USART3_RX*/
 GPIOB->AFR[1] |= 0x04 << GPIO_AFRH_AFSEL11_Pos;
 
-//GPIOB->AFR[1] |= (1 << 10) | (1 << 11);
 
 
 USART3->BRR = HAL_RCC_GetHCLKFreq() / 115200;
@@ -138,6 +122,30 @@ char hello[] = "Hello World! ";
 		numItrs++;
   }
   /* USER CODE END 3 */
+}
+
+
+/**
+* @brief transmits a char through USART3
+* @retval None
+*/
+void transmitChar(char c){
+	
+	while(!(USART3->ISR & USART_ISR_TXE)){
+	}
+	USART3->TDR = c;
+}
+
+/**
+* @brief transmits a string through USART3
+* @retval None
+*/
+void transmitString(char string[]){
+		int idx = 0;
+    while(string[idx] != '\0'){
+			transmitChar(string[idx]);
+			idx++;
+		}
 }
 
 
