@@ -145,9 +145,9 @@ GPIOC->PUPDR &= ~(0 <<16); //setting PC8 to to no pull-up/down resistors
 GPIOC->PUPDR &= ~(0 <<18); //setting PC9 to to no pull-up/down resistors
 
 // Setting Pins initial states
-GPIOC->ODR &= ~(1 << 6); //setting pin 6 to high
-GPIOC->ODR &= ~(1 << 7); //setting pin 7 to high
-GPIOC->ODR &= ~(1 << 8); //setting pin 8 to high
+GPIOC->ODR &= ~(1 << 6); //setting pin 6 to low
+GPIOC->ODR &= ~(1 << 7); //setting pin 7 to low
+GPIOC->ODR &= ~(1 << 8); //setting pin 8 to low
 GPIOC->ODR &= ~(1 << 9); //setting pin 9 to low
 
   while (1)
@@ -159,7 +159,7 @@ GPIOC->ODR &= ~(1 << 9); //setting pin 9 to low
 }
 	
 void receiveChar(){
-	char errorMessage[] = "does not correspond to an LED.  Choose one of the following: 'R','G','B','O'.";
+	char errorMessage[] = "does not correspond to an LED.  Choose one of the following: 'R','G','B','O'.\0";
 	char c = 'x';
 	
 		while(1){
@@ -168,33 +168,33 @@ void receiveChar(){
 			}
 		}
 					//when not empty, receive data
-		c = (uint8_t)(USART3->RDR);
+		//c = (uint8_t)(USART3->RDR);
 		//transmitChar(c);
 		
-			switch(c){
+			switch(USART3->RDR){
 				case 'r': //PC6
 					// Toggle the output state of PC6
-					//transmitChar(c);
 					GPIOC->ODR ^= 0b001000000; // Inverts the 6th
+					GPIOC->ODR &= ~((1 << 7) | (1 << 8) | (1 << 9)); //clears all the other LEDs
 					break;
 				case 'g': //PC9
-					//transmitChar(c);
 					// Toggle the output state of PC9
-					GPIOC->ODR ^= 0b01000000000; // Inverts the 7th
+					GPIOC->ODR ^= 0b01000000000; // Inverts the 9th
+					GPIOC->ODR &= ~((1 << 7) | (1 << 8) | (1 << 6)); //clears all the other LEDs
 					break;
 				case 'b': //PC7
-					//transmitChar(c);
 					// Toggle the output state of PC7
 					GPIOC->ODR ^= 0b010000000; // Inverts the 7th
+					GPIOC->ODR &= ~((1 << 6) | (1 << 8) | (1 << 9)); //clears all the other LEDs
 					break;
 				case 'o': //PC8
-				//	transmitChar(c);
 					// Toggle the output state of PC8
-					GPIOC->ODR ^= 0b0100000000; // Inverts the 7th
+					GPIOC->ODR ^= 0b0100000000; // Inverts the 8th
+					GPIOC->ODR &= ~((1 << 7) | (1 << 6) | (1 << 9)); //clears all the other LEDs
 					break;
-			}
-			if(c != 'r' || c != 'g' || c != 'b' || c != 'o'){
-				//transmitString(errorMessage);
+				default:
+					transmitString(errorMessage);
+					break;
 			}
 }
 
@@ -220,6 +220,7 @@ void transmitString(char string[]){
 			transmitChar(string[idx]);
 			idx++;
 		}
+
 }
 
 
