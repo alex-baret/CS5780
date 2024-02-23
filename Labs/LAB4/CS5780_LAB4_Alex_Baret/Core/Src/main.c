@@ -115,8 +115,8 @@ char c;
 int numItrs = 0;
 char hello[] = "Hello World! "; 
 char errorMessage[] = "does not correspond to an LED.  Choose one of the following: 'R','G','B','O'.";
+
 int toggleCount = 0;
-int numItrs = 0;
 /* LED Pin configuration */
 
 // Enable the system clock for the C peripheral
@@ -145,48 +145,58 @@ GPIOC->PUPDR &= ~(0 <<16); //setting PC8 to to no pull-up/down resistors
 GPIOC->PUPDR &= ~(0 <<18); //setting PC9 to to no pull-up/down resistors
 
 // Setting Pins initial states
-GPIOC->ODR |= (1 << 6); //setting pin 6 to high
-GPIOC->ODR |= (1 << 7); //setting pin 7 to high
-GPIOC->ODR |= (1 << 8); //setting pin 8 to high
-GPIOC->ODR |= (1 << 9); //setting pin 9 to low
+GPIOC->ODR &= ~(1 << 6); //setting pin 6 to high
+GPIOC->ODR &= ~(1 << 7); //setting pin 7 to high
+GPIOC->ODR &= ~(1 << 8); //setting pin 8 to high
+GPIOC->ODR &= ~(1 << 9); //setting pin 9 to low
 
   while (1)
   {
-			if (USART_ISR_RXNE){
-					c = (uint8_t)(USART3->RDR); /* Receive data, clear flag */
-					transmitChar(c);
+
+		receiveChar();
+
+	}
+}
+	
+void receiveChar(){
+	char errorMessage[] = "does not correspond to an LED.  Choose one of the following: 'R','G','B','O'.";
+	char c = 'x';
+	
+		while(1){
+			if(USART_ISR_RXNE){
+				break;
 			}
-			
-	//		if (c == 'r'){
-	//			transmitChar(c);
-	//			HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_6);
-	//		}
+		}
+					//when not empty, receive data
+		c = (uint8_t)(USART3->RDR);
+		//transmitChar(c);
+		
 			switch(c){
 				case 'r': //PC6
 					// Toggle the output state of PC6
-					transmitChar(c);
-					//HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_6);
+					//transmitChar(c);
+					GPIOC->ODR ^= 0b001000000; // Inverts the 6th
 					break;
-		//		case 'g': //PC9
+				case 'g': //PC9
+					//transmitChar(c);
 					// Toggle the output state of PC9
-		//			HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_9);
-		//			break;
-		//		case 'b': //PC7
+					GPIOC->ODR ^= 0b01000000000; // Inverts the 7th
+					break;
+				case 'b': //PC7
+					//transmitChar(c);
 					// Toggle the output state of PC7
-		//			HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_7);
-		//			break;
-		//		case 'o': //PC8
+					GPIOC->ODR ^= 0b010000000; // Inverts the 7th
+					break;
+				case 'o': //PC8
+				//	transmitChar(c);
 					// Toggle the output state of PC8
-		//			HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_8);
-		//			break;
-		//		default:
-		//			transmitString(errorMessage);
-		//			break;
-		//	}
+					GPIOC->ODR ^= 0b0100000000; // Inverts the 7th
+					break;
 			}
-		}
-	}
-
+			if(c != 'r' || c != 'g' || c != 'b' || c != 'o'){
+				//transmitString(errorMessage);
+			}
+}
 
 
 /**
