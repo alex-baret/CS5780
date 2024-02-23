@@ -19,43 +19,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
-/* Private includes ----------------------------------------------------------*/
-/* USER CODE BEGIN Includes */
-
-/* USER CODE END Includes */
-
-/* Private typedef -----------------------------------------------------------*/
-/* USER CODE BEGIN PTD */
-
-/* USER CODE END PTD */
-
-/* Private define ------------------------------------------------------------*/
-/* USER CODE BEGIN PD */
-
-/* USER CODE END PD */
-
-/* Private macro -------------------------------------------------------------*/
-/* USER CODE BEGIN PM */
-
-/* USER CODE END PM */
-
-/* Private variables ---------------------------------------------------------*/
-
-/* USER CODE BEGIN PV */
-
-/* USER CODE END PV */
-
-/* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
-/* USER CODE BEGIN PFP */
-
-/* USER CODE END PFP */
-
-/* Private user code ---------------------------------------------------------*/
-/* USER CODE BEGIN 0 */
-
-/* USER CODE END 0 */
-
 void transmitChar(char c);
 void transmitString(char string[]);
 void receiveChar();
@@ -64,38 +28,35 @@ void setUp();
 
 volatile char interruptChar; 
 volatile int hasData;
+volatile int numIterations = 0;
 
 
 /**
-  * @brief  The application entry point.
-  * @retval int
-  */
+* @brief  The application entry point.
+* @retval int
+*/
 int main(void)
 {
-  /* USER CODE BEGIN 1 */
-
-  /* USER CODE END 1 */
-
-  /* MCU Configuration--------------------------------------------------------*/
 setUp();
- int numItrs = 0;
-char hello[] = "Hello World! "; 
-char errorMessage[] = "does not correspond to an LED.  Choose one of the following: 'R','G','B','O'.";
 
+int numItrs = 0;
+char prompt[] = "CMD>"; 
+char errorMessage[] = "does not correspond to an LED.  Choose one of the following: 'R','G','B','O'.";
 int toggleCount = 0;
 
-  while (1)
-  {
-
-	//	if (hasData){
-	//		parseData();
-	//	}
-		receiveChar();
-	}
+while (1){
+  // if(numItrs < 1){
+  //   transmitString(prompt);
+  // }
+  // numItrs++;
+	// if (hasData){
+	// 	parseData();
+	// }
+ receiveChar();
+}
 }
 
 void parseData(){
-		
 			switch(interruptChar){
 				case 'r': //PC6
 					// Toggle the output state of PC6
@@ -118,7 +79,10 @@ void parseData(){
 					GPIOC->ODR &= ~((1 << 7) | (1 << 6) | (1 << 9)); //clears all the other LEDs
 					break;
 				default:
-				//	transmitString(errorMessage);
+          if(numIterations < 1){
+          //  transmitString(errorMessage);
+          }
+          numIterations++;
 					break;
 			}
 
@@ -127,40 +91,44 @@ void parseData(){
 	
 void receiveChar(){
 	char errorMessage[] = "does not correspond to an LED.  Choose one of the following: 'R','G','B','O'.\0";
-	char c;
-	
-		while(!USART_ISR_RXNE){
+	char c;	
+	while(!USART_ISR_RXNE){
 
-		}
-		//when not empty, receive data
-		c = (uint8_t)(USART3->RDR);
-		//transmitChar(c);
-		
-			switch(c){
-				case 'r': //PC6
-					// Toggle the output state of PC6
-					GPIOC->ODR ^= 0b001000000; // Inverts the 6th
-					GPIOC->ODR &= ~((1 << 7) | (1 << 8) | (1 << 9)); //clears all the other LEDs
-					break;
-				case 'g': //PC9
-					// Toggle the output state of PC9
-					GPIOC->ODR ^= 0b01000000000; // Inverts the 9th
-					GPIOC->ODR &= ~((1 << 7) | (1 << 8) | (1 << 6)); //clears all the other LEDs
-					break;
-				case 'b': //PC7
-					// Toggle the output state of PC7
-					GPIOC->ODR ^= 0b010000000; // Inverts the 7th
-					GPIOC->ODR &= ~((1 << 6) | (1 << 8) | (1 << 9)); //clears all the other LEDs
-					break;
-				case 'o': //PC8
-					// Toggle the output state of PC8
-					GPIOC->ODR ^= 0b0100000000; // Inverts the 8th
-					GPIOC->ODR &= ~((1 << 7) | (1 << 6) | (1 << 9)); //clears all the other LEDs
-					break;
-				default:
-					transmitString(errorMessage);
-					break;
-			}
+	}
+	//when not empty, receive data
+	c = (uint8_t)(USART3->RDR);
+  switch(c){
+    case 'r': //PC6
+      // Toggle the output state of PC6
+      GPIOC->ODR ^= 0b001000000; // Inverts the 6th
+      GPIOC->ODR &= ~((1 << 7) | (1 << 8) | (1 << 9)); //clears all the other LEDs
+			numIterations = 0;
+      break;
+    case 'g': //PC9
+      // Toggle the output state of PC9
+      GPIOC->ODR ^= 0b01000000000; // Inverts the 9th
+      GPIOC->ODR &= ~((1 << 7) | (1 << 8) | (1 << 6)); //clears all the other LEDs
+			numIterations = 0;
+      break;
+    case 'b': //PC7
+      // Toggle the output state of PC7
+      GPIOC->ODR ^= 0b010000000; // Inverts the 7th
+      GPIOC->ODR &= ~((1 << 6) | (1 << 8) | (1 << 9)); //clears all the other LEDs
+			numIterations = 0;
+      break;
+    case 'o': //PC8
+      // Toggle the output state of PC8
+      GPIOC->ODR ^= 0b0100000000; // Inverts the 8th
+      GPIOC->ODR &= ~((1 << 7) | (1 << 6) | (1 << 9)); //clears all the other LEDs
+			numIterations = 0;
+      break;
+    default:
+        if(numIterations < 1){
+            transmitString(errorMessage);
+          }
+        numIterations++;
+      break;
+  }
 }
 
 
@@ -188,34 +156,33 @@ void transmitString(char string[]){
 
 }
 
+/**
+ * @brief Performs setup needed to run the program such as initializing peripheral clocks, setting GPIO modes, etc.
+*/
 void setUp(){
-	 /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  HAL_Init();
 
+// Reset of all peripherals, Initializes the Flash interface and the Systick.
+HAL_Init();
 
-  /* Configure the system clock */
-  SystemClock_Config();
+// Configure the system clock
+SystemClock_Config();
 
-
-//Enable peripheral clock for USART3
+// Enable peripheral clock for USART3
 RCC->APB1ENR |= RCC_APB1ENR_USART3EN;
-	
+
 /* This sequence select AF4 for GPIOA10 and 11.  */
-/* (1) Enable the peripheral clock of GPIOB */
+//(1) Enable the peripheral clock of GPIOB
 RCC->AHBENR |= RCC_AHBENR_GPIOBEN;
 
-	
-	/* (2) Select alternate function mode on GPIOB pins PC10 and PC11 */
+//(2) Select alternate function mode on GPIOB pins PC10 and PC11
 GPIOB->MODER = (GPIOB->MODER & ~(GPIO_MODER_MODER10 | GPIO_MODER_MODER11)) | GPIO_MODER_MODER10_1
-| GPIO_MODER_MODER11_1; /* (2) */
+| GPIO_MODER_MODER11_1; 
 
-
-/* (3) Select AF4 on PB10 in AFRH for USART3_TX*/
+//(3) Select AF4 on PB10 in AFRH for USART3_TX
 GPIOB->AFR[1] |= 0x04 << GPIO_AFRH_AFSEL10_Pos;
-/* (4) Select AF4 on PB11 in AFRH for USART3_RX*/
+
+// (4) Select AF4 on PB11 in AFRH for USART3_RX
 GPIOB->AFR[1] |= 0x04 << GPIO_AFRH_AFSEL11_Pos;
-
-
 
 USART3->BRR = HAL_RCC_GetHCLKFreq() / 115200;
 USART3->CR1 = USART_CR1_TE | USART_CR1_UE | USART_CR1_RE | USART_CR1_RXNEIE; /* (2) */
@@ -223,14 +190,10 @@ USART3->CR1 = USART_CR1_TE | USART_CR1_UE | USART_CR1_RE | USART_CR1_RXNEIE; /* 
 //Enable USART interrupt
 NVIC_EnableIRQ(USART3_4_IRQn);
 
-
-
 /* LED Pin configuration */
-
 // Enable the system clock for the C peripheral
 RCC->AHBENR |= (1 << 19);
 
-	
 //configure the LEDs Pins 
 GPIOC->MODER |= (1 <<12); //setting PC6 to general output 
 GPIOC->MODER |= (1 <<14); //setting PC7 to general output 
@@ -307,9 +270,6 @@ void SystemClock_Config(void)
   }
 }
 
-/* USER CODE BEGIN 4 */
-
-/* USER CODE END 4 */
 
 /**
   * @brief  This function is executed in case of error occurrence.
