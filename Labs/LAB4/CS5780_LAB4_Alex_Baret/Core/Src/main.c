@@ -23,7 +23,6 @@ void SystemClock_Config(void);
 void transmitChar(char c);
 void transmitString(char string[]);
 void receiveChar();
-void parseData();
 void setUp();
 
 volatile char interruptChar; 
@@ -45,90 +44,40 @@ char errorMessage[] = "does not correspond to an LED.  Choose one of the followi
 int toggleCount = 0;
 
 while (1){
-  // if(numItrs < 1){
-  //   transmitString(prompt);
-  // }
-  // numItrs++;
-	// if (hasData){
-	// 	parseData();
-	// }
  receiveChar();
-}
-}
-
-void parseData(){
-			switch(interruptChar){
-				case 'r': //PC6
-					// Toggle the output state of PC6
-					GPIOC->ODR ^= 0b001000000; // Inverts the 6th
-					GPIOC->ODR &= ~((1 << 7) | (1 << 8) | (1 << 9)); //clears all the other LEDs
-					break;
-				case 'g': //PC9
-					// Toggle the output state of PC9
-					GPIOC->ODR ^= 0b01000000000; // Inverts the 9th
-					GPIOC->ODR &= ~((1 << 7) | (1 << 8) | (1 << 6)); //clears all the other LEDs
-					break;
-				case 'b': //PC7
-					// Toggle the output state of PC7
-					GPIOC->ODR ^= 0b010000000; // Inverts the 7th
-					GPIOC->ODR &= ~((1 << 6) | (1 << 8) | (1 << 9)); //clears all the other LEDs
-					break;
-				case 'o': //PC8
-					// Toggle the output state of PC8
-					GPIOC->ODR ^= 0b0100000000; // Inverts the 8th
-					GPIOC->ODR &= ~((1 << 7) | (1 << 6) | (1 << 9)); //clears all the other LEDs
-					break;
-				default:
-          if(numIterations < 1){
-          //  transmitString(errorMessage);
-          }
-          numIterations++;
-					break;
-			}
-
+	}
 }
 
 	
 void receiveChar(){
 	char errorMessage[] = "does not correspond to an LED.  Choose one of the following: 'R','G','B','O'.\0";
 	char c;	
-	while(!USART_ISR_RXNE){
-
-	}
+  if(USART3->ISR & USART_ISR_RXNE){
 	//when not empty, receive data
 	c = (uint8_t)(USART3->RDR);
   switch(c){
     case 'r': //PC6
-      // Toggle the output state of PC6
-      GPIOC->ODR ^= 0b001000000; // Inverts the 6th
-      GPIOC->ODR &= ~((1 << 7) | (1 << 8) | (1 << 9)); //clears all the other LEDs
-			numIterations = 0;
+      // Toggle the output state of PC6U
+		HAL_GPIO_TogglePin(GPIOC,GPIO_PIN_6); // Inverts the 6th
       break;
     case 'g': //PC9
       // Toggle the output state of PC9
-      GPIOC->ODR ^= 0b01000000000; // Inverts the 9th
-      GPIOC->ODR &= ~((1 << 7) | (1 << 8) | (1 << 6)); //clears all the other LEDs
+		HAL_GPIO_TogglePin(GPIOC,GPIO_PIN_9); // Inverts the 9th
 			numIterations = 0;
       break;
     case 'b': //PC7
       // Toggle the output state of PC7
-      GPIOC->ODR ^= 0b010000000; // Inverts the 7th
-      GPIOC->ODR &= ~((1 << 6) | (1 << 8) | (1 << 9)); //clears all the other LEDs
-			numIterations = 0;
+		HAL_GPIO_TogglePin(GPIOC,GPIO_PIN_7); // Inverts the 7th
       break;
     case 'o': //PC8
       // Toggle the output state of PC8
-      GPIOC->ODR ^= 0b0100000000; // Inverts the 8th
-      GPIOC->ODR &= ~((1 << 7) | (1 << 6) | (1 << 9)); //clears all the other LEDs
-			numIterations = 0;
+			HAL_GPIO_TogglePin(GPIOC,GPIO_PIN_8); // Inverts the 8th
       break;
     default:
-        if(numIterations < 1){
             transmitString(errorMessage);
-          }
-        numIterations++;
       break;
   }
+    }
 }
 
 
@@ -188,7 +137,6 @@ USART3->BRR = HAL_RCC_GetHCLKFreq() / 115200;
 USART3->CR1 = USART_CR1_TE | USART_CR1_UE | USART_CR1_RE | USART_CR1_RXNEIE; /* (2) */
 
 //Enable USART interrupt
-NVIC_EnableIRQ(USART3_4_IRQn);
 
 /* LED Pin configuration */
 // Enable the system clock for the C peripheral
@@ -223,15 +171,6 @@ GPIOC->ODR &= ~(1 << 9); //setting pin 9 to low
 
 }
 
-
-/**
-*@brief This function handles the TIM2_IRQn
-*/
-void USART3_4_IRQHandler (void){
-		
-	interruptChar = (uint8_t)(USART3->RDR);
-	hasData = 1;
-}
 
 
 
