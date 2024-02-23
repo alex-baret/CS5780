@@ -32,6 +32,7 @@ volatile int hasData = 0;
 volatile int printPrompt = 1;
 volatile char multiStepErrorMessage[] = "Does not correspond to a command.  Enter one of the following: 'r0','r1','r2','g0','g1','g2','b0','b1','b2','o0','o1','o2'\0";
 volatile int readStep = 0;
+volatile char dataBuffer;
 
 
 /**
@@ -43,7 +44,7 @@ int main(void)
 setUp();
 
 int numItrs = 0;
-char prompt[] = "CMD>"; 
+char prompt[] = "CMD>\0"; 
 char errorMessage[] = "does not correspond to an LED.  Choose one of the following: 'R','G','B','O'.";
 int toggleCount = 0;
 
@@ -52,6 +53,10 @@ while (1){
      transmitString(prompt);
   }
   printPrompt = 0;
+  if (hasData){
+    parseData();
+    hasData = 0;
+  }
 	}
 }
 
@@ -59,9 +64,8 @@ while (1){
  * @brief sets the LED color and setting based off user input
 */
 void parseData(){
-  hasData = 0;
 
-    if(readStep == 0){
+	 if(readStep == 0){
       color = (uint8_t)(USART3->RDR);
 			transmitChar(color);
     } else if (readStep == 1){
@@ -69,14 +73,8 @@ void parseData(){
 			transmitChar(ledSetting);
 			printPrompt = 1;
     }
-			  if(readStep == 1){ //should have the color and the setting, so reset the control flags
-    readStep = 0;
-  }
-  else{
-    readStep++;
-  }
-    
-		
+    //if it's at the first step increment, last step reset it
+    readStep == 0 ? readStep++ : (readStep = 0); 
 }
 
 	
@@ -139,10 +137,10 @@ void transmitString(char string[]){
 *@brief This function handles the USART3_4_IRQn
 */
 void USART3_4_IRQHandler (void){
-	char s[] = "in handler";
+	//char s[] = "in handler";
   //transmitString(s);
 	hasData = 1;
-	parseData();
+  dataBuffer = (uint8_t)(USART3->RDR);
 }
 
 /**
