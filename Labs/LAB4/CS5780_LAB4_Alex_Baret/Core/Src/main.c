@@ -29,10 +29,10 @@ void printInstruction(char message[]);
 int evalData();
 
 volatile char color;
-volatile int ledSetting = 0; 
+volatile char ledSetting = 0; 
 volatile int hasData = 0;
 volatile int printPrompt = 1;
-volatile char multiStepErrorMessage[] = "Does not correspond to a command.  Enter one of the following: 'r0','r1','r2','g0','g1','g2','b0','b1','b2','o0','o1','o2'\0";
+// volatile char multiStepErrorMessage[] = "Does not correspond to a command.  Enter one of the following: 'r0','r1','r2','g0','g1','g2','b0','b1','b2','o0','o1','o2'\0";
 volatile int step = 0;
 volatile char dataBuffer;
 
@@ -67,6 +67,7 @@ while (1){
  * @brief sets the LED color and setting based off user input
 */
 void parseData(){
+  char multiStepErrorMessage[] = "Does not correspond to a command.  Enter one of the following: 'r0','r1','r2','g0','g1','g2','b0','b1','b2','o0','o1','o2'\0";
   int valid;
     if(step == 0){
       color = (uint8_t)(USART3->RDR);
@@ -78,6 +79,9 @@ void parseData(){
       if(valid){
         transmitString("Correct info provided \0");
         printPrompt = 1;
+      }
+      else{
+        transmitString(multiStepErrorMessage);
       } 
     }
   //if it's not the last step increment it, last step reset it
@@ -86,26 +90,57 @@ void parseData(){
 
 int evalData(){
   switch(color){
-  case 'r': //PC6
-    // Toggle the output state of PC6U
-  HAL_GPIO_TogglePin(GPIOC,GPIO_PIN_6); // Inverts the 6th
-    break;
-  case 'g': //PC9
-    // Toggle the output state of PC9
-  HAL_GPIO_TogglePin(GPIOC,GPIO_PIN_9); // Inverts the 9th
-    break;
-  case 'b': //PC7
-    // Toggle the output state of PC7
-  HAL_GPIO_TogglePin(GPIOC,GPIO_PIN_7); // Inverts the 7th
-    break;
-  case 'o': //PC8
-    // Toggle the output state of PC8
-    HAL_GPIO_TogglePin(GPIOC,GPIO_PIN_8); // Inverts the 8th
-    break;
-  default: //empty default
-    break;
+    case 'r': //PC6
+      switch (ledSetting){
+        case '0': //turn off 
+          GPIOC->ODR &= ~(1 << 6); //setting pin 6 to low
+          return 1;
+        case '1': //turn on 
+          GPIOC->ODR |= (1 << 6); //setting pin 6 to high
+          return 1;
+        case '2': //toggle 
+          HAL_GPIO_TogglePin(GPIOC,GPIO_PIN_6); // Inverts the 6th
+          return 1;
+      }
+      break;
+    case 'g': //PC9
+      switch (ledSetting){
+        case '0': //turn off 
+          GPIOC->ODR &= ~(1 << 9); //setting pin 9 to low
+          return 1;
+        case '1': //turn on 
+          GPIOC->ODR |= (1 << 9); //setting pin 9 to high
+          return 1;
+        case '2': //toggle 
+          HAL_GPIO_TogglePin(GPIOC,GPIO_PIN_9); // Inverts the 9th
+          return 1;
+      }
+    case 'b': //PC7
+      switch (ledSetting){
+        case '0': //turn off 
+          GPIOC->ODR &= ~(1 << 7); //setting pin 9 to low
+          return 1;
+        case '1': //turn on 
+          GPIOC->ODR |= (1 << 7); //setting pin 9 to high
+          return 1;
+        case '2': //toggle 
+          HAL_GPIO_TogglePin(GPIOC,GPIO_PIN_7); // Inverts the 9th
+          return 1;
+      }
+    case 'o': //PC8
+      switch (ledSetting){
+        case '0': //turn off 
+          GPIOC->ODR &= ~(1 << 8); //setting pin 9 to low
+          return 1;
+        case '1': //turn on 
+          GPIOC->ODR |= (1 << 8); //setting pin 9 to high
+          return 1;
+        case '2': //toggle 
+          HAL_GPIO_TogglePin(GPIOC,GPIO_PIN_8); // Inverts the 9th
+          return 1;
+      }
 }
-  return 1;
+  return 0; //if it makes it out of the switch the data entry was invalid
 }
 
 void printInstruction(char message[]){
