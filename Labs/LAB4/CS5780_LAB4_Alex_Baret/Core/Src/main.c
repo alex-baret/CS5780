@@ -25,6 +25,7 @@ void transmitString(char string[]);
 void receiveChar();
 void setUp();
 void parseData();
+void printInstruction(char message[]);
 
 volatile char color;
 volatile int ledSetting = 0; 
@@ -50,7 +51,7 @@ int toggleCount = 0;
 
 while (1){
 	if(printPrompt == 1){
-     transmitString(prompt);
+     printInstruction(prompt);
   }
   printPrompt = 0;
   if (hasData){
@@ -75,6 +76,10 @@ void parseData(){
     }
     //if it's at the first step increment, last step reset it
     readStep == 0 ? readStep++ : (readStep = 0); 
+}
+
+void printInstruction(char message[]){
+  transmitString(message);
 }
 
 	
@@ -137,8 +142,6 @@ void transmitString(char string[]){
 *@brief This function handles the USART3_4_IRQn
 */
 void USART3_4_IRQHandler (void){
-	//char s[] = "in handler";
-  //transmitString(s);
 	hasData = 1;
   dataBuffer = (uint8_t)(USART3->RDR);
 }
