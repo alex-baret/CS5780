@@ -46,7 +46,7 @@ int main(void)
 setUp();
 
 int numItrs = 0;
-char prompt[] = "CMD>\0"; 
+char prompt[] = "CMD> \0"; 
 char errorMessage[] = "does not correspond to an LED.  Choose one of the following: 'R','G','B','O'.";
 int toggleCount = 0;
 
@@ -68,29 +68,43 @@ while (1){
 */
 void parseData(){
   int valid;
-  switch (step)
-  {
-  case 0:
-    color = (uint8_t)(USART3->RDR);
-		transmitChar(color);
-    break;
-  case 1:
-    ledSetting = (uint8_t)(USART3->RDR);
-		transmitChar(ledSetting);
-    valid = evalData();
-    if(valid){
-      transmitString("Correct info provided");
-      printPrompt = 1;
+    if(step == 0){
+      color = (uint8_t)(USART3->RDR);
+		  transmitChar(color);
+    } else if (step == 1){
+      ledSetting = (uint8_t)(USART3->RDR);
+		  transmitChar(ledSetting);
+      valid = evalData();
+      if(valid){
+        transmitString("Correct info provided \0");
+        printPrompt = 1;
+      } 
     }
-    break;
-  default: //empty default case
-    break;
-  }
   //if it's not the last step increment it, last step reset it
   step == 0 ? step++ : (step = 0); 
 }
 
 int evalData(){
+  switch(color){
+  case 'r': //PC6
+    // Toggle the output state of PC6U
+  HAL_GPIO_TogglePin(GPIOC,GPIO_PIN_6); // Inverts the 6th
+    break;
+  case 'g': //PC9
+    // Toggle the output state of PC9
+  HAL_GPIO_TogglePin(GPIOC,GPIO_PIN_9); // Inverts the 9th
+    break;
+  case 'b': //PC7
+    // Toggle the output state of PC7
+  HAL_GPIO_TogglePin(GPIOC,GPIO_PIN_7); // Inverts the 7th
+    break;
+  case 'o': //PC8
+    // Toggle the output state of PC8
+    HAL_GPIO_TogglePin(GPIOC,GPIO_PIN_8); // Inverts the 8th
+    break;
+  default: //empty default
+    break;
+}
   return 1;
 }
 
