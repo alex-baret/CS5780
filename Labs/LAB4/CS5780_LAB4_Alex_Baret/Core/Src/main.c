@@ -26,13 +26,14 @@ void receiveChar();
 void setUp();
 void parseData();
 void printInstruction(char message[]);
+int evalData();
 
 volatile char color;
 volatile int ledSetting = 0; 
 volatile int hasData = 0;
 volatile int printPrompt = 1;
 volatile char multiStepErrorMessage[] = "Does not correspond to a command.  Enter one of the following: 'r0','r1','r2','g0','g1','g2','b0','b1','b2','o0','o1','o2'\0";
-volatile int readStep = 0;
+volatile int step = 0;
 volatile char dataBuffer;
 
 
@@ -58,6 +59,7 @@ while (1){
     parseData();
     hasData = 0;
   }
+  
 	}
 }
 
@@ -65,17 +67,31 @@ while (1){
  * @brief sets the LED color and setting based off user input
 */
 void parseData(){
-
-	 if(readStep == 0){
-      color = (uint8_t)(USART3->RDR);
-			transmitChar(color);
-    } else if (readStep == 1){
-      ledSetting = (uint8_t)(USART3->RDR);
-			transmitChar(ledSetting);
-			printPrompt = 1;
+  int valid;
+  switch (step)
+  {
+  case 0:
+    color = (uint8_t)(USART3->RDR);
+		transmitChar(color);
+    break;
+  case 1:
+    ledSetting = (uint8_t)(USART3->RDR);
+		transmitChar(ledSetting);
+    valid = evalData();
+    if(valid){
+      transmitString("Correct info provided");
+      printPrompt = 1;
     }
-    //if it's at the first step increment, last step reset it
-    readStep == 0 ? readStep++ : (readStep = 0); 
+    break;
+  default: //empty default case
+    break;
+  }
+  //if it's not the last step increment it, last step reset it
+  step == 0 ? step++ : (step = 0); 
+}
+
+int evalData(){
+  return 1;
 }
 
 void printInstruction(char message[]){
