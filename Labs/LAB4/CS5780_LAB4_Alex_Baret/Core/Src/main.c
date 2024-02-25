@@ -52,7 +52,7 @@ int toggleCount = 0;
 
 while (1){
 	if(printPrompt == 1){
-     printInstruction(prompt);
+     transmitString(prompt);
   }
   printPrompt = 0;
   if (hasData){
@@ -67,7 +67,7 @@ while (1){
  * @brief sets the LED color and setting based off user input
 */
 void parseData(){
-  char multiStepErrorMessage[] = "Does not correspond to a command.  Enter one of the following: 'r0','r1','r2','g0','g1','g2','b0','b1','b2','o0','o1','o2'\0";
+  char multiStepErrorMessage[] = " Does not correspond to a command.  Enter one of the following: 'r0','r1','r2','g0','g1','g2','b0','b1','b2','o0','o1','o2'\0";
   int valid;
     if(step == 0){
       color = (uint8_t)(USART3->RDR);
@@ -76,13 +76,10 @@ void parseData(){
       ledSetting = (uint8_t)(USART3->RDR);
 		  transmitChar(ledSetting);
       valid = evalData();
-      if(valid){
-        transmitString("Correct info provided \0");
-        printPrompt = 1;
-      }
-      else{
+      if(!valid){
         transmitString(multiStepErrorMessage);
-      } 
+      }
+      printPrompt = 1;
     }
   //if it's not the last step increment it, last step reset it
   step == 0 ? step++ : (step = 0); 
@@ -94,12 +91,15 @@ int evalData(){
       switch (ledSetting){
         case '0': //turn off 
           GPIOC->ODR &= ~(1 << 6); //setting pin 6 to low
+          transmitString(" Correct command provided, shutting off red LED \0");
           return 1;
         case '1': //turn on 
           GPIOC->ODR |= (1 << 6); //setting pin 6 to high
+          transmitString(" Correct command provided, turning on red LED \0");
           return 1;
         case '2': //toggle 
           HAL_GPIO_TogglePin(GPIOC,GPIO_PIN_6); // Inverts the 6th
+          transmitString(" Correct command provided, toggling RED led \0");
           return 1;
       }
       break;
@@ -107,36 +107,45 @@ int evalData(){
       switch (ledSetting){
         case '0': //turn off 
           GPIOC->ODR &= ~(1 << 9); //setting pin 9 to low
+          transmitString(" Correct command provided, shutting off green LED \0");
           return 1;
         case '1': //turn on 
           GPIOC->ODR |= (1 << 9); //setting pin 9 to high
+          transmitString(" Correct command provided, shutting off green LED \0");
           return 1;
         case '2': //toggle 
           HAL_GPIO_TogglePin(GPIOC,GPIO_PIN_9); // Inverts the 9th
+          transmitString(" Correct command provided, shutting off green LED \0");
           return 1;
       }
     case 'b': //PC7
       switch (ledSetting){
         case '0': //turn off 
           GPIOC->ODR &= ~(1 << 7); //setting pin 9 to low
+          transmitString(" Correct command provided, shutting off blue LED \0");
           return 1;
         case '1': //turn on 
           GPIOC->ODR |= (1 << 7); //setting pin 9 to high
+          transmitString(" Correct command provided, shutting off blue LED \0");
           return 1;
         case '2': //toggle 
           HAL_GPIO_TogglePin(GPIOC,GPIO_PIN_7); // Inverts the 9th
+          transmitString(" Correct command provided, shutting off blue LED \0");
           return 1;
       }
     case 'o': //PC8
       switch (ledSetting){
         case '0': //turn off 
           GPIOC->ODR &= ~(1 << 8); //setting pin 9 to low
+          transmitString(" Correct command provided, shutting off orange LED \0");
           return 1;
         case '1': //turn on 
           GPIOC->ODR |= (1 << 8); //setting pin 9 to high
+          transmitString(" Correct command provided, shutting off orange LED \0");
           return 1;
         case '2': //toggle 
           HAL_GPIO_TogglePin(GPIOC,GPIO_PIN_8); // Inverts the 9th
+          transmitString(" Correct command provided, shutting off orange LED \0");
           return 1;
       }
 }
