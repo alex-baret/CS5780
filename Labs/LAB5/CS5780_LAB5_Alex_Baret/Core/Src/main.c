@@ -19,84 +19,101 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
-/* Private includes ----------------------------------------------------------*/
-/* USER CODE BEGIN Includes */
-
-/* USER CODE END Includes */
-
-/* Private typedef -----------------------------------------------------------*/
-/* USER CODE BEGIN PTD */
-
-/* USER CODE END PTD */
-
-/* Private define ------------------------------------------------------------*/
-/* USER CODE BEGIN PD */
-
-/* USER CODE END PD */
-
-/* Private macro -------------------------------------------------------------*/
-/* USER CODE BEGIN PM */
-
-/* USER CODE END PM */
-
-/* Private variables ---------------------------------------------------------*/
-
-/* USER CODE BEGIN PV */
-
-/* USER CODE END PV */
-
-/* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
-/* USER CODE BEGIN PFP */
+void setUp();
 
-/* USER CODE END PFP */
 
-/* Private user code ---------------------------------------------------------*/
-/* USER CODE BEGIN 0 */
 
-/* USER CODE END 0 */
 
 /**
-  * @brief  The application entry point.
-  * @retval int
-  */
+* @brief  The application entry point.
+* @retval int
+*/
 int main(void)
 {
-  /* USER CODE BEGIN 1 */
+setUp();
 
-  /* USER CODE END 1 */
+while (1){
 
-  /* MCU Configuration--------------------------------------------------------*/
-
-  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  HAL_Init();
-
-  /* USER CODE BEGIN Init */
-
-  /* USER CODE END Init */
-
-  /* Configure the system clock */
-  SystemClock_Config();
-
-  /* USER CODE BEGIN SysInit */
-
-  /* USER CODE END SysInit */
-
-  /* Initialize all configured peripherals */
-  /* USER CODE BEGIN 2 */
-
-  /* USER CODE END 2 */
-
-  /* Infinite loop */
-  /* USER CODE BEGIN WHILE */
-  while (1)
-  {
-    /* USER CODE END WHILE */
-
-    /* USER CODE BEGIN 3 */
-  }
-  /* USER CODE END 3 */
+  
+	}
 }
+
+
+
+
+
+
+// /**
+// *@brief This function handles the USART3_4_IRQn
+// */
+// void USART3_4_IRQHandler (void){
+// 	hasData = 1;
+//   dataBuffer = (uint8_t)(USART3->RDR);
+// }
+
+/**
+ * @brief Performs setup needed to run the program such as initializing peripheral clocks, setting GPIO modes, etc.
+*/
+void setUp(){
+
+HAL_Init(); // Reset of all peripherals, Initializes the Flash interface and the Systick.
+
+/* === Clock Settings === */
+
+SystemClock_Config(); // Configure the system clock
+
+RCC->AHBENR |= RCC_AHBENR_GPIOBEN; //Enable the system clock for the GPIOC peripheral
+RCC->AHBENR |= RCC_AHBENR_GPIOCEN; // Enable the system clock for the GPIOC peripheral
+RCC->APB1ENR |= RCC_APB1ENR_I2C2EN; // Enable system clock for I2C2EN peripheral
+
+
+/* === GPIO Settings === */
+/* This sequence selects AF1 for GPIOB11, AF5 for GPIOB13, and general output for PB14 and PC0  */
+
+GPIOB->MODER = (GPIOB->MODER & ~(GPIO_MODER_MODER11 | GPIO_MODER_MODER13)) | GPIO_MODER_MODER11_1
+| GPIO_MODER_MODER13_1; // Select alternate function mode on GPIOB pins PC11 and PC13
+
+GPIOB->AFR[1] |= 0x01 << GPIO_AFRH_AFSEL11_Pos; // Select AF1 on PB11 in AFRH for I2C2_SDA
+GPIOB->AFR[1] |= 0x05 << GPIO_AFRH_AFSEL13_Pos; // Select AF5 on PB13 in AFRH for I2C2_SCL
+
+GPIOB->OTYPER |= (1 << 11);//setting PB11 to open-drain [1]
+GPIOB->OTYPER |= (1 << 13);//setting PB13 to open-drain [1]
+
+//setting PB14 to general output [29-28] = [01]
+GPIOB->MODER |= (1 <<28); //setting 28th
+GPIOB->MODER &= ~(1 << 29) ; //clearing 29th
+
+GPIOB->OTYPER &= ~(1 << 14);//setting PB14 to push/pull output (clearing 14th bit for PB14 in OTYPER)
+
+GPIOB->ODR |= (1 << 14); //setting pin 14 to high
+
+//setting PC0 to general output [29-28] = [01]
+GPIOC->MODER |= (1 << 1); //setting 1st
+GPIOC->MODER &= ~(1 << 0) ; //clearing 0th
+
+GPIOC->OTYPER &= ~(1 << 0);//setting PC0 to push/pull output (clearing 0th bit for PC0 in OTYPER)
+
+GPIOC->ODR |= (1 << 0); //setting pin 0 to high
+
+
+/* I2C Settings */
+
+//Setting TIMINGR register parameters to 100kHz standard-mode I2C
+I2C2->TIMINGR |= (0x1 << I2C_TIMINGR_PRESC_Pos);
+I2C2->TIMINGR |= (0x13 << I2C_TIMINGR_SCLL_Pos); 
+I2C2->TIMINGR |= (0xF << I2C_TIMINGR_SCLH_Pos);
+I2C2->TIMINGR |= (0x2 << I2C_TIMINGR_SDADEL_Pos);
+I2C2->TIMINGR |= (0x4 << I2C_TIMINGR_SCLDEL_Pos);
+
+I2C2->CR1 |= I2C_CR1_PE; //enable I2C2 peripheral
+
+//I2C2->CR2 = I2C_CR2_AUTOEND | (1 << 16) | (I2C2_OWN_ADDRESS << 1); /* (3) */
+
+}
+
+
+
 
 /**
   * @brief System Clock Configuration
@@ -133,9 +150,6 @@ void SystemClock_Config(void)
   }
 }
 
-/* USER CODE BEGIN 4 */
-
-/* USER CODE END 4 */
 
 /**
   * @brief  This function is executed in case of error occurrence.
