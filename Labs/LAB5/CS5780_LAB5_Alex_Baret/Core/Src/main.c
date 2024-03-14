@@ -27,7 +27,7 @@
 void SystemClock_Config(void);
 void setUp();
 void reloadCR2Params(int sendOrReceive, int slaveAddr);
-
+void checkBreakpoint(int step);
 
 
 /**
@@ -42,18 +42,24 @@ int main(void){
   I2C2->CR2 |= I2C_CR2_START; // Go
 
   while (1){
-    while (!(I2C2->ISR == I2C_ISR_NACKF) || !(I2C2->ISR == I2C_ISR_TXIS)){}
+    //while (!(I2C2->ISR == I2C_ISR_NACKF) && !(I2C2->ISR == I2C_ISR_TXIS)){
+     // GPIOC->ODR |= (1 << 6); //error, turn on red LED
+			//HAL_Delay(200);
+      //GPIOC->ODR &= ~(1 << 6); //error, turn on red LED
+    //}
+      checkBreakpoint(1);
       if(I2C2->ISR == I2C_ISR_NACKF){ // Slave did not respond to the address frame. Maybe a wiring or configuration error.
         GPIOC->ODR |= (1 << 6); //error, turn on red LED
       }
-      else if(I2C2->ISR == I2C_ISR_TXIS){
+      else if((I2C2->ISR & I2C_ISR_TXE) == I2C_ISR_TXE){
         //write data into TXDR
+        checkBreakpoint(3);
         I2C2->TXDR = I2C_BYTE_TO_SEND; //Write the address of the “WHO_AM_I” register into the I2C transmit register. (TXDR)
-        //I2C2->CR2 |= I2C_CR2_START; // Go
+        I2C2->CR2 |= I2C_CR2_START; // Go
         while(!(I2C2->ISR == I2C_ISR_TC)){} //while the transfer is not complete, wait
         reloadCR2Params(0,SLAVE_ADDR);
         I2C2->CR2 |= I2C_CR2_START; // perform a restart condition
-        while(!(I2C2->ISR == I2C_ISR_RXNE) || !(I2C2->ISR == I2C_ISR_NACKF)){} //while the transfer is not complete, wait
+        while(!(I2C2->ISR == I2C_ISR_RXNE) && !(I2C2->ISR == I2C_ISR_NACKF)){} //while the transfer is not complete, wait
           if(I2C2->ISR == I2C_ISR_NACKF){ 
             GPIOC->ODR |= (1 << 6); //error, turn on red LED
           }
@@ -74,6 +80,20 @@ int main(void){
 }
 
 
+/**
+ * Blinks blue LED to signify breakpoint step (whether code reaches that step or not)
+*/
+void checkBreakpoint(int step){
+		HAL_Delay(500);
+    for (int i = 0; i < step; i++)
+    {
+      GPIOC->ODR |= (1 << 7); //blue LED debugging
+			HAL_Delay(200);
+			GPIOC->ODR &= ~(1 << 7);
+			HAL_Delay(200);
+    }
+    HAL_Delay(500);
+}
 
 /**
  * @brief Performs setup needed to run the program such as initializing peripheral clocks, setting GPIO modes, etc.
@@ -121,19 +141,32 @@ void setUp(){
 
   GPIOC->ODR |= (1 << 0); //setting pin 0 to high
 
-  //setting red LED
-  GPIOC->MODER |= (1 <<12); //setting PC6 to general output 
-  GPIOC->OTYPER |= (0 << 7);//setting PC6 to push/pull output 
-  GPIOC->OSPEEDR |= (0 <<12); //setting PC6 to low speed
-  GPIOC->PUPDR |= (0 <<12); //setting PC6 to to no pull-up/down resistors
-  GPIOC->ODR &= ~(1 << 6); //setting pin 6 to low
+//configure the LEDs Pins 
+GPIOC->MODER |= (1 <<12); //setting PC6 to general output RED
+GPIOC->MODER |= (1 <<14); //setting PC7 to general output BLUE
+GPIOC->MODER |= (1 <<16); //setting PC8 to general output ORANGE
+GPIOC->MODER |= (1 <<18); //setting PC9 to general output GREEN
 
-  //setting green LED
-  GPIOC->MODER |= (1 <<18); //setting PC9 to general output 
-  GPIOC->OTYPER |= (0 << 10);//setting PC9 to push/pull output 
-  GPIOC->OSPEEDR |= (0 <<18); //setting PC9 to low speed
-  GPIOC->PUPDR |= (0 <<18); //setting PC9 to to no pull-up/down resistors
-  GPIOC->ODR &= ~(1 << 9); //setting pin 9 to low
+GPIOC->OTYPER &= ~(0 << 7);//setting PC6 to push/pull output 
+GPIOC->OTYPER &= ~(0 << 8);//setting PC7 to push/pull output 
+GPIOC->OTYPER &= ~(0 << 9);//setting PC8 to push/pull output
+GPIOC->OTYPER &= ~(0 << 10);//setting PC9 to push/pull output
+
+GPIOC->OSPEEDR &= ~(0 <<12); //setting PC6 to low speed
+GPIOC->OSPEEDR &= ~(0 <<14); //setting PC7 to low speed
+GPIOC->OSPEEDR &= ~(0 <<16); //setting PC8 to low speed
+GPIOC->OSPEEDR &= ~(0 <<18); //setting PC9 to low speed
+
+GPIOC->PUPDR &= ~(0 <<12); //setting PC6 to to no pull-up/down resistors
+GPIOC->PUPDR &= ~(0 <<14); //setting PC7 to to no pull-up/down resistors
+GPIOC->PUPDR &= ~(0 <<16); //setting PC8 to to no pull-up/down resistors
+GPIOC->PUPDR &= ~(0 <<18); //setting PC9 to to no pull-up/down resistors
+
+// Setting Pins initial states
+GPIOC->ODR &= ~(1 << 6); //setting pin 6 to low
+GPIOC->ODR &= ~(1 << 7); //setting pin 7 to low
+GPIOC->ODR &= ~(1 << 8); //setting pin 8 to low
+GPIOC->ODR &= ~(1 << 9); //setting pin 9 to low
 
   /* === I2C Settings === */
 
