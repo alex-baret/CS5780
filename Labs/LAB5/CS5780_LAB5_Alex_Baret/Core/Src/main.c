@@ -44,7 +44,7 @@ int main(void){
   while (1){
     while (!(I2C2->ISR == I2C_ISR_NACKF) || !(I2C2->ISR == I2C_ISR_TXIS)){}
       if(I2C2->ISR == I2C_ISR_NACKF){ // Slave did not respond to the address frame. Maybe a wiring or configuration error.
-        //error, toggle red IO pin
+        GPIOC->ODR |= (1 << 6); //error, turn on red LED
       }
       else if(I2C2->ISR == I2C_ISR_TXIS){
         //write data into TXDR
@@ -55,19 +55,22 @@ int main(void){
         I2C2->CR2 |= I2C_CR2_START; // perform a restart condition
         while(!(I2C2->ISR == I2C_ISR_RXNE) || !(I2C2->ISR == I2C_ISR_NACKF)){} //while the transfer is not complete, wait
           if(I2C2->ISR == I2C_ISR_NACKF){ 
-            //error, toggle red IO pin
+            GPIOC->ODR |= (1 << 6); //error, turn on red LED
           }
           else if (I2C2->ISR == I2C_ISR_RXNE)
           {
             while(!(I2C2->ISR == I2C_ISR_TC)){}
             if(I2C2->RXDR == I2C_BYTE_TO_SEND){
-              //toggle green IO pin
+              GPIOC->ODR |= (1 << 9); //success, turn on green LED
               I2C2->CR2 |= I2C_CR2_START; // stop
             }
           }
           
       }
     }
+    //reset indicator LEDs
+    GPIOC->ODR &= ~(1 << 6); //turning off red LED 
+    GPIOC->ODR &= ~(1 << 9); //turning off green LED 
 }
 
 
@@ -118,6 +121,19 @@ void setUp(){
 
   GPIOC->ODR |= (1 << 0); //setting pin 0 to high
 
+  //setting red LED
+  GPIOC->MODER |= (1 <<12); //setting PC6 to general output 
+  GPIOC->OTYPER |= (0 << 7);//setting PC6 to push/pull output 
+  GPIOC->OSPEEDR |= (0 <<12); //setting PC6 to low speed
+  GPIOC->PUPDR |= (0 <<12); //setting PC6 to to no pull-up/down resistors
+  GPIOC->ODR &= ~(1 << 6); //setting pin 6 to low
+
+  //setting green LED
+  GPIOC->MODER |= (1 <<18); //setting PC9 to general output 
+  GPIOC->OTYPER |= (0 << 10);//setting PC9 to push/pull output 
+  GPIOC->OSPEEDR |= (0 <<18); //setting PC9 to low speed
+  GPIOC->PUPDR |= (0 <<18); //setting PC9 to to no pull-up/down resistors
+  GPIOC->ODR &= ~(1 << 9); //setting pin 9 to low
 
   /* === I2C Settings === */
 
