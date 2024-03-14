@@ -19,9 +19,14 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
+#define WRITE       1
+#define READ       0
+#define SLAVE_ADDR    0x69
+#define I2C_BYTE_TO_SEND    0xD3
+
 void SystemClock_Config(void);
 void setUp();
-
+void reloadCR2Params(int sendOrReceive, int slaveAddr);
 
 
 
@@ -29,89 +34,115 @@ void setUp();
 * @brief  The application entry point.
 * @retval int
 */
-int main(void)
-{
-setUp();
+int main(void){
 
-while (1){
+  setUp();
 
-  
-	}
+  reloadCR2Params(WRITE,SLAVE_ADDR);
+  I2C2->CR2 |= I2C_CR2_START; // Go
+
+  while (1){
+    while (!(I2C2->ISR == I2C_ISR_NACKF) || !(I2C2->ISR == I2C_ISR_TXIS)){}
+      if(I2C2->ISR == I2C_ISR_NACKF){ // Slave did not respond to the address frame. Maybe a wiring or configuration error.
+        //error, toggle red IO pin
+      }
+      else if(I2C2->ISR == I2C_ISR_TXIS){
+        //write data into TXDR
+        I2C2->TXDR = I2C_BYTE_TO_SEND; //Write the address of the “WHO_AM_I” register into the I2C transmit register. (TXDR)
+        //I2C2->CR2 |= I2C_CR2_START; // Go
+        while(!(I2C2->ISR == I2C_ISR_TC)){} //while the transfer is not complete, wait
+        reloadCR2Params(0,SLAVE_ADDR);
+        I2C2->CR2 |= I2C_CR2_START; // perform a restart condition
+        while(!(I2C2->ISR == I2C_ISR_RXNE) || !(I2C2->ISR == I2C_ISR_NACKF)){} //while the transfer is not complete, wait
+          if(I2C2->ISR == I2C_ISR_NACKF){ 
+            //error, toggle red IO pin
+          }
+          else if (I2C2->ISR == I2C_ISR_RXNE)
+          {
+            while(!(I2C2->ISR == I2C_ISR_TC)){}
+            if(I2C2->RXDR == I2C_BYTE_TO_SEND){
+              //toggle green IO pin
+              I2C2->CR2 |= I2C_CR2_START; // stop
+            }
+          }
+          
+      }
+    }
 }
 
 
-
-
-
-
-// /**
-// *@brief This function handles the USART3_4_IRQn
-// */
-// void USART3_4_IRQHandler (void){
-// 	hasData = 1;
-//   dataBuffer = (uint8_t)(USART3->RDR);
-// }
 
 /**
  * @brief Performs setup needed to run the program such as initializing peripheral clocks, setting GPIO modes, etc.
 */
 void setUp(){
 
-HAL_Init(); // Reset of all peripherals, Initializes the Flash interface and the Systick.
+  int slaveAddr = 0x69;
 
-/* === Clock Settings === */
+  HAL_Init(); // Reset of all peripherals, Initializes the Flash interface and the Systick.
 
-SystemClock_Config(); // Configure the system clock
+  /* === Clock Settings === */
 
-RCC->AHBENR |= RCC_AHBENR_GPIOBEN; //Enable the system clock for the GPIOC peripheral
-RCC->AHBENR |= RCC_AHBENR_GPIOCEN; // Enable the system clock for the GPIOC peripheral
-RCC->APB1ENR |= RCC_APB1ENR_I2C2EN; // Enable system clock for I2C2EN peripheral
+  SystemClock_Config(); // Configure the system clock
 
-
-/* === GPIO Settings === */
-/* This sequence selects AF1 for GPIOB11, AF5 for GPIOB13, and general output for PB14 and PC0  */
-
-GPIOB->MODER = (GPIOB->MODER & ~(GPIO_MODER_MODER11 | GPIO_MODER_MODER13)) | GPIO_MODER_MODER11_1
-| GPIO_MODER_MODER13_1; // Select alternate function mode on GPIOB pins PC11 and PC13
-
-GPIOB->AFR[1] |= 0x01 << GPIO_AFRH_AFSEL11_Pos; // Select AF1 on PB11 in AFRH for I2C2_SDA
-GPIOB->AFR[1] |= 0x05 << GPIO_AFRH_AFSEL13_Pos; // Select AF5 on PB13 in AFRH for I2C2_SCL
-
-GPIOB->OTYPER |= (1 << 11);//setting PB11 to open-drain [1]
-GPIOB->OTYPER |= (1 << 13);//setting PB13 to open-drain [1]
-
-//setting PB14 to general output [29-28] = [01]
-GPIOB->MODER |= (1 <<28); //setting 28th
-GPIOB->MODER &= ~(1 << 29) ; //clearing 29th
-
-GPIOB->OTYPER &= ~(1 << 14);//setting PB14 to push/pull output (clearing 14th bit for PB14 in OTYPER)
-
-GPIOB->ODR |= (1 << 14); //setting pin 14 to high
-
-//setting PC0 to general output [29-28] = [01]
-GPIOC->MODER |= (1 << 1); //setting 1st
-GPIOC->MODER &= ~(1 << 0) ; //clearing 0th
-
-GPIOC->OTYPER &= ~(1 << 0);//setting PC0 to push/pull output (clearing 0th bit for PC0 in OTYPER)
-
-GPIOC->ODR |= (1 << 0); //setting pin 0 to high
+  RCC->AHBENR |= RCC_AHBENR_GPIOBEN; //Enable the system clock for the GPIOC peripheral
+  RCC->AHBENR |= RCC_AHBENR_GPIOCEN; // Enable the system clock for the GPIOC peripheral
+  RCC->APB1ENR |= RCC_APB1ENR_I2C2EN; // Enable system clock for I2C2EN peripheral
 
 
-/* I2C Settings */
+  /* === GPIO Settings === */
+  /* This sequence selects AF1 for GPIOB11, AF5 for GPIOB13, and general output for PB14 and PC0  */
 
-//Setting TIMINGR register parameters to 100kHz standard-mode I2C
-I2C2->TIMINGR |= (0x1 << I2C_TIMINGR_PRESC_Pos);
-I2C2->TIMINGR |= (0x13 << I2C_TIMINGR_SCLL_Pos); 
-I2C2->TIMINGR |= (0xF << I2C_TIMINGR_SCLH_Pos);
-I2C2->TIMINGR |= (0x2 << I2C_TIMINGR_SDADEL_Pos);
-I2C2->TIMINGR |= (0x4 << I2C_TIMINGR_SCLDEL_Pos);
+  GPIOB->MODER = (GPIOB->MODER & ~(GPIO_MODER_MODER11 | GPIO_MODER_MODER13)) | GPIO_MODER_MODER11_1
+  | GPIO_MODER_MODER13_1; // Select alternate function mode on GPIOB pins PC11 and PC13
 
-I2C2->CR1 |= I2C_CR1_PE; //enable I2C2 peripheral
+  GPIOB->AFR[1] |= 0x01 << GPIO_AFRH_AFSEL11_Pos; // Select AF1 on PB11 in AFRH for I2C2_SDA
+  GPIOB->AFR[1] |= 0x05 << GPIO_AFRH_AFSEL13_Pos; // Select AF5 on PB13 in AFRH for I2C2_SCL
 
-//I2C2->CR2 = I2C_CR2_AUTOEND | (1 << 16) | (I2C2_OWN_ADDRESS << 1); /* (3) */
+  GPIOB->OTYPER |= (1 << 11);//setting PB11 to open-drain [1]
+  GPIOB->OTYPER |= (1 << 13);//setting PB13 to open-drain [1]
+
+  //setting PB14 to general output [29-28] = [01]
+  GPIOB->MODER |= (1 <<28); //setting 28th
+  GPIOB->MODER &= ~(1 << 29) ; //clearing 29th
+
+  GPIOB->OTYPER &= ~(1 << 14);//setting PB14 to push/pull output (clearing 14th bit for PB14 in OTYPER)
+
+  GPIOB->ODR |= (1 << 14); //setting pin 14 to high
+
+  //setting PC0 to general output [29-28] = [01]
+  GPIOC->MODER |= (1 << 1); //setting 1st
+  GPIOC->MODER &= ~(1 << 0) ; //clearing 0th
+
+  GPIOC->OTYPER &= ~(1 << 0);//setting PC0 to push/pull output (clearing 0th bit for PC0 in OTYPER)
+
+  GPIOC->ODR |= (1 << 0); //setting pin 0 to high
+
+
+  /* === I2C Settings === */
+
+  //Setting TIMINGR register parameters to 100kHz standard-mode I2C
+  I2C2->TIMINGR |= (0x1 << I2C_TIMINGR_PRESC_Pos);
+  I2C2->TIMINGR |= (0x13 << I2C_TIMINGR_SCLL_Pos); 
+  I2C2->TIMINGR |= (0xF << I2C_TIMINGR_SCLH_Pos);
+  I2C2->TIMINGR |= (0x2 << I2C_TIMINGR_SDADEL_Pos);
+  I2C2->TIMINGR |= (0x4 << I2C_TIMINGR_SCLDEL_Pos);
+  I2C2->CR1 |= I2C_CR1_PE; //enable I2C2 peripheral
 
 }
 
+/**
+ * Configures the CR2 register for I2C read/write 
+*/
+void reloadCR2Params(int sendOrReceive, int slaveAddr){
+  I2C2->CR2 &= ~((0x7F << 16) | (0x3FF << 0)); //Clear the NBYTES and SADD bit field. The NBYTES field begins at bit 16, the SADD at bit 0
+  I2C2->CR2 |= (1 << 16) | (slaveAddr << 1); //Set NBYTES = 1 and SADD = 0x69
+  if(sendOrReceive){ //if true writing
+    I2C2->CR2 |= (1 << 10); //setting the RD_WRN bit to indicate a write operation
+  } else {
+    I2C2->CR2  &= ~(1 << 10); //clearing the RD_WRN bit to indicate a read operation
+  }
+}
 
 
 
