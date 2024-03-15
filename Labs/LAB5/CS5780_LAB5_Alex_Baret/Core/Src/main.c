@@ -48,17 +48,22 @@ int main(void){
       //GPIOC->ODR &= ~(1 << 6); //error, turn on red LED
     //}
       checkBreakpoint(1);
-      if(I2C2->ISR == I2C_ISR_NACKF){ // Slave did not respond to the address frame. Maybe a wiring or configuration error.
+      if(I2C2->ISR & I2C_ISR_NACKF){ // Slave did not respond to the address frame. Maybe a wiring or configuration error.
         GPIOC->ODR |= (1 << 6); //error, turn on red LED
+				HAL_Delay(200); //leave it on for 0.2 seconds
+				GPIOC->ODR &= ~(1 << 6);
       }
-      else if((I2C2->ISR & I2C_ISR_TXE) == I2C_ISR_TXE){
+      else if((I2C2->ISR & I2C_ISR_TXIS) == I2C_ISR_TXIS){
         //write data into TXDR
-        checkBreakpoint(3);
+        checkBreakpoint(2);
         I2C2->TXDR = I2C_BYTE_TO_SEND; //Write the address of the “WHO_AM_I” register into the I2C transmit register. (TXDR)
         I2C2->CR2 |= I2C_CR2_START; // Go
-        while(!(I2C2->ISR == I2C_ISR_TC)){} //while the transfer is not complete, wait
+        
+        while(I2C2->ISR != I2C_ISR_TC){} //while the transfer is not complete, wait
+				checkBreakpoint(3);
         reloadCR2Params(0,SLAVE_ADDR);
         I2C2->CR2 |= I2C_CR2_START; // perform a restart condition
+        
         while(!(I2C2->ISR == I2C_ISR_RXNE) && !(I2C2->ISR == I2C_ISR_NACKF)){} //while the transfer is not complete, wait
           if(I2C2->ISR == I2C_ISR_NACKF){ 
             GPIOC->ODR |= (1 << 6); //error, turn on red LED
@@ -134,8 +139,8 @@ void setUp(){
   GPIOB->ODR |= (1 << 14); //setting pin 14 to high
 
   //setting PC0 to general output [29-28] = [01]
-  GPIOC->MODER |= (1 << 1); //setting 1st
-  GPIOC->MODER &= ~(1 << 0) ; //clearing 0th
+  GPIOC->MODER |= (1 << 0); //clearing 0th
+  GPIOC->MODER &= ~(1 << 1) ; //setting 1st
 
   GPIOC->OTYPER &= ~(1 << 0);//setting PC0 to push/pull output (clearing 0th bit for PC0 in OTYPER)
 
@@ -171,11 +176,14 @@ GPIOC->ODR &= ~(1 << 9); //setting pin 9 to low
   /* === I2C Settings === */
 
   //Setting TIMINGR register parameters to 100kHz standard-mode I2C
-  I2C2->TIMINGR |= (0x1 << I2C_TIMINGR_PRESC_Pos);
-  I2C2->TIMINGR |= (0x13 << I2C_TIMINGR_SCLL_Pos); 
-  I2C2->TIMINGR |= (0xF << I2C_TIMINGR_SCLH_Pos);
-  I2C2->TIMINGR |= (0x2 << I2C_TIMINGR_SDADEL_Pos);
-  I2C2->TIMINGR |= (0x4 << I2C_TIMINGR_SCLDEL_Pos);
+  //I2C2->TIMINGR |= (0x1 << I2C_TIMINGR_PRESC_Pos);
+  //I2C2->TIMINGR |= (0x13 << I2C_TIMINGR_SCLL_Pos); 
+  //I2C2->TIMINGR |= (0xF << I2C_TIMINGR_SCLH_Pos);
+  //I2C2->TIMINGR |= (0x2 << I2C_TIMINGR_SDADEL_Pos);
+  //I2C2->TIMINGR |= (0x4 << I2C_TIMINGR_SCLDEL_Pos);
+	
+	I2C2->TIMINGR = 0x1042F013;
+
   I2C2->CR1 |= I2C_CR1_PE; //enable I2C2 peripheral
 
 }
@@ -187,9 +195,10 @@ void reloadCR2Params(int sendOrReceive, int slaveAddr){
   I2C2->CR2 &= ~((0x7F << 16) | (0x3FF << 0)); //Clear the NBYTES and SADD bit field. The NBYTES field begins at bit 16, the SADD at bit 0
   I2C2->CR2 |= (1 << 16) | (slaveAddr << 1); //Set NBYTES = 1 and SADD = 0x69
   if(sendOrReceive){ //if true writing
-    I2C2->CR2 |= (1 << 10); //setting the RD_WRN bit to indicate a write operation
+			I2C2->CR2  &= ~(1 << 10); //clearing the RD_WRN bit to indicate a write operation
   } else {
-    I2C2->CR2  &= ~(1 << 10); //clearing the RD_WRN bit to indicate a read operation
+    
+		   I2C2->CR2 |= (1 << 10); //setting the RD_WRN bit to indicate a read operation
   }
 }
 
