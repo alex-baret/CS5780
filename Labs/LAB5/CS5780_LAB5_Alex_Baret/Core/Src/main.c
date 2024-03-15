@@ -59,7 +59,11 @@ int main(void){
         I2C2->TXDR = I2C_BYTE_TO_SEND; //Write the address of the “WHO_AM_I” register into the I2C transmit register. (TXDR)
         I2C2->CR2 |= I2C_CR2_START; // Go
         
-        while(I2C2->ISR != I2C_ISR_TC){} //while the transfer is not complete, wait
+        while(!((I2C2->ISR >> 1) & 1)){
+				  GPIOC->ODR |= (1 << 8); //transmitting?
+				  HAL_Delay(200); //leave it on for 0.2 seconds
+				  GPIOC->ODR &= ~(1 << 8);
+				} //while the transfer is not complete, wait
 				checkBreakpoint(3);
         reloadCR2Params(0,SLAVE_ADDR);
         I2C2->CR2 |= I2C_CR2_START; // perform a restart condition
