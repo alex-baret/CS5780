@@ -28,6 +28,7 @@ void SystemClock_Config(void);
 void setUp();
 void reloadCR2Params(int sendOrReceive, int slaveAddr);
 void checkBreakpoint(int step);
+void errorLed();
 
 
 /**
@@ -42,39 +43,32 @@ int main(void){
   I2C2->CR2 |= I2C_CR2_START; // Go
 
   while (1){
-    //while (!(I2C2->ISR == I2C_ISR_NACKF) && !(I2C2->ISR == I2C_ISR_TXIS)){
-     // GPIOC->ODR |= (1 << 6); //error, turn on red LED
-			//HAL_Delay(200);
-      //GPIOC->ODR &= ~(1 << 6); //error, turn on red LED
-    //}
       checkBreakpoint(1);
       if(I2C2->ISR & I2C_ISR_NACKF){ // Slave did not respond to the address frame. Maybe a wiring or configuration error.
-        GPIOC->ODR |= (1 << 6); //error, turn on red LED
-				HAL_Delay(200); //leave it on for 0.2 seconds
-				GPIOC->ODR &= ~(1 << 6);
+        errorLed();
       }
-      else if((I2C2->ISR & I2C_ISR_TXIS) == I2C_ISR_TXIS){
+      else if((I2C2->ISR & I2C_ISR_TXIS) == I2C_ISR_TXIS){ //#2
         //write data into TXDR
         checkBreakpoint(2);
         I2C2->TXDR = I2C_BYTE_TO_SEND; //Write the address of the “WHO_AM_I” register into the I2C transmit register. (TXDR)
-        I2C2->CR2 |= I2C_CR2_START; // Go
         
-        while(!((I2C2->ISR >> 1) & 1)){
-				  GPIOC->ODR |= (1 << 8); //transmitting?
+        while(!((I2C2->ISR >> 6) & 1)){ //waiting for TC flag #4
+				  GPIOC->ODR |= (1 << 8); //transmitting
 				  HAL_Delay(200); //leave it on for 0.2 seconds
 				  GPIOC->ODR &= ~(1 << 8);
-				} //while the transfer is not complete, wait
+				} 
 				checkBreakpoint(3);
-        reloadCR2Params(0,SLAVE_ADDR);
+        reloadCR2Params(READ,SLAVE_ADDR); //#5
         I2C2->CR2 |= I2C_CR2_START; // perform a restart condition
         
-        while(!(I2C2->ISR == I2C_ISR_RXNE) && !(I2C2->ISR == I2C_ISR_NACKF)){} //while the transfer is not complete, wait
-          if(I2C2->ISR == I2C_ISR_NACKF){ 
-            GPIOC->ODR |= (1 << 6); //error, turn on red LED
+        while(!(I2C2->ISR & I2C_ISR_NACKF) && !((I2C2->ISR >> 2) & 1)){} // #6 waiting for NACKF or RXNE
+          if(I2C2->ISR & I2C_ISR_NACKF){ 
+						errorLed();
           }
-          else if (I2C2->ISR == I2C_ISR_RXNE)
+          else if ((I2C2->ISR >> 2) & 1) // continue if RXNE is set 
           {
-            while(!(I2C2->ISR == I2C_ISR_TC)){}
+						checkBreakpoint(4);
+            while(!((I2C2->ISR >> 6) & 1)){} // #7
             if(I2C2->RXDR == I2C_BYTE_TO_SEND){
               GPIOC->ODR |= (1 << 9); //success, turn on green LED
               I2C2->CR2 |= I2C_CR2_START; // stop
@@ -102,6 +96,12 @@ void checkBreakpoint(int step){
 			HAL_Delay(200);
     }
     HAL_Delay(500);
+}
+
+void errorLed(){
+				GPIOC->ODR |= (1 << 6); //error, turn on red LED
+				HAL_Delay(200); //leave it on for 0.2 seconds
+				GPIOC->ODR &= ~(1 << 6);
 }
 
 /**
