@@ -41,29 +41,32 @@ int main(void)
 
   setUp();
 
-  reloadCR2Params(WRITE, SLAVE_ADDR);
+  // reloadCR2Params(WRITE, SLAVE_ADDR);
+  I2C2->CR2 &= ~((0x7F << 16) | (0x3FF << 0)); // Clear the NBYTES and SADD bit field. The NBYTES field begins at bit 16, the SADD at bit 0
+  I2C2->CR2 |= (1 << 16) | (0x69 << 1);   // Set NBYTES = 1 and SADD = 0x69
+  I2C2->CR2 &= ~(1 << 10); //write
   I2C2->CR2 |= I2C_CR2_START; // Go
 
   while (1)
   {
-    checkBreakpoint(1);
+     checkBreakpoint(1);
     if (I2C2->ISR & I2C_ISR_NACKF)
     { // Slave did not respond to the address frame. Maybe a wiring or configuration error.
-      errorLed();
+      // errorLed();
     }
-    else if ((I2C2->ISR & I2C_ISR_TXIS) == I2C_ISR_TXIS)
+    else if (I2C2->ISR & I2C_ISR_TXIS)
     { // #2
       // write data into TXDR
       checkBreakpoint(2);
-      I2C2->TXDR = I2C_BYTE_TO_SEND; // Write the address of the “WHO_AM_I” register into the I2C transmit register. (TXDR)
+      I2C2->TXDR = 0x0F; // Write the address of the “WHO_AM_I” register into the I2C transmit register. (TXDR)
 
-      while (!((I2C2->ISR >> 6) & 1))
+      while (!(I2C2->ISR & I2C_ISR_TC))
       {                         // waiting for TC flag #4
-        GPIOC->ODR |= (1 << 8); // transmitting
-        HAL_Delay(200);         // leave it on for 0.2 seconds
-        GPIOC->ODR &= ~(1 << 8);
+         GPIOC->ODR |= (1 << 8); // transmitting
+         HAL_Delay(200);         // leave it on for 0.2 seconds
+         GPIOC->ODR &= ~(1 << 8);
       }
-      checkBreakpoint(3);
+       checkBreakpoint(3);
       I2C2->CR2 &= ~((0x7F << 16) | (0x3FF << 0)); // Clear the NBYTES and SADD bit field. The NBYTES field begins at bit 16, the SADD at bit 0
       I2C2->CR2 |= (1 << 16) | (0x69 << 1);   // Set NBYTES = 1 and SADD = 0x69
       I2C2->CR2 |= (1 << 10); // setting the RD_WRN bit to indicate a read operation
@@ -74,25 +77,25 @@ int main(void)
       } // #6 waiting for NACKF or RXNE
       if (I2C2->ISR & I2C_ISR_NACKF)
       {
-        errorLed();
+         errorLed();
       }
-      else if ((I2C2->ISR >> 2) & 1) // continue if RXNE is set
+      else if (I2C2->ISR & I2C_ISR_RXNE) // continue if RXNE is set
       {
-        checkBreakpoint(4);
+         checkBreakpoint(4);
         while (!((I2C2->ISR >> 6) & 1))
         {                         // waiting for TC flag #4
           GPIOC->ODR |= (1 << 8); // transmitting
           HAL_Delay(200);         // leave it on for 0.2 seconds
           GPIOC->ODR &= ~(1 << 8);
         }
-        if (I2C2->RXDR == I2C_BYTE_TO_SEND)
+        if (I2C2->RXDR == 0xD3)
         {
           GPIOC->ODR |= (1 << 9);    // success, turn on green LED
           I2C2->CR2 |= I2C_CR2_STOP; // stop
         }
         else if ((I2C2->RXDR & I2C_RXDR_RXDATA) == 0)
         {
-          checkBreakpoint(5);
+           checkBreakpoint(1);
         }
 
         else
@@ -279,11 +282,11 @@ void setUp()
   // Setting TIMINGR register parameters to 100kHz standard-mode I2C
   // I2C2->TIMINGR |= (0x1 << I2C_TIMINGR_PRESC_Pos);
   // I2C2->TIMINGR |= (0x13 << I2C_TIMINGR_SCLL_Pos);
-  // I2C2->TIMINGR |= (0xF << I2C_TIMINGR_SCLH_Pos);
+   //I2C2->TIMINGR |= (0x0F << I2C_TIMINGR_SCLH_Pos);
   // I2C2->TIMINGR |= (0x2 << I2C_TIMINGR_SDADEL_Pos);
   // I2C2->TIMINGR |= (0x4 << I2C_TIMINGR_SCLDEL_Pos);
 
-  I2C2->TIMINGR = 0x1042F013;
+		I2C2->TIMINGR = 0x1042F013;
 
   I2C2->CR1 |= I2C_CR1_PE; // enable I2C2 peripheral
 }
