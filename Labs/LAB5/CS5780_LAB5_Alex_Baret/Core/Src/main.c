@@ -24,6 +24,14 @@
 #define DEVICE_ADDR 0x69
 #define WHOAMI_VALUE 0xD3
 #define WHOAMI_ADDR 0x0F
+#define CTRL_REG1_ADDR	0x20
+#define CNRL_REG1_CONFIG_VALS 0b00001011  // normal op mode, x & y axes enabled, default low-speed mode
+#define X_AXIS_COMBINED_ADDR	0xA8
+#define OUT_X_L_ADDR	0x28
+#define OUT_X_H_ADDR	0x29
+#define Y_AXIS_COMBINED_ADDR	0xAA
+#define OUT_Y_L_ADDR	0x2A
+#define OUT_Y_H_ADDR	0x2B
 
 void SystemClock_Config(void);
 void setUp();
