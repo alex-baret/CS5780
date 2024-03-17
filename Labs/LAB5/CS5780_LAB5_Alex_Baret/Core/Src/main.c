@@ -42,9 +42,12 @@ void errorLed(int red, int orange);
 int read();
 void write();
 void initGyro();
-void parseData(char axis, int data);
+void parseData(char axis, short data);
 void checkXOrientation();
 void checkYOrientation();
+
+volatile short x = 0;
+volatile short y = 0;
 
 /**
  * @brief  The application entry point.
@@ -67,33 +70,39 @@ int main(void)
 }
 
 void checkXOrientation(){
-    // Read from x-axis H
-    write(1,OUT_X_H_ADDR);
-    int hX = read(1);
-    // shift it 8
-    int highDataX = hX << 8;
-    // read from x-axis L
+    // Select low x-axis reg
     write(1,OUT_X_L_ADDR);
-    int lowDataX = read(1);
+    // read from x-axis L
+    char lowDataX = read(1);
+    // Select high x-axis reg
+    write(1,OUT_X_H_ADDR);
+    // Read from x-axis H
+    char hX = read(1);
+    // shift it 8
+    short highDataX = ((short)hX) << 8;
     // OR the two bit fields together
-    int dataX = highDataX | lowDataX; 
+    short dataX = highDataX | lowDataX; 
     //parse data
-    parseData('x',dataX);
+    x += dataX;
+    parseData('x',x);
 }
 
 void checkYOrientation(){
-    // Read from y-axis H
-    write(1,OUT_Y_H_ADDR);
-    int hY = read(1);
-    // shift it 8
-    int highDataY = hY << 8;
-    // read from x-axis L
+    // Select low y-axis reg
     write(1,OUT_Y_L_ADDR);
-    int lowDataY = read(1);
+    // read from y-axis L
+    char lowDataY = read(1);
+    // Select high y-axis reg
+    write(1,OUT_Y_H_ADDR);
+    // Read from y-axis H
+    char hY = read(1);
+    // shift it 8
+    short highDataY = ((short)hY) << 8;
     // OR the two bit fields together
-    int dataY = highDataY | lowDataY; 
+    short dataY = highDataY | lowDataY; 
     //parse data
-    parseData('y',dataY);
+    y += dataY;
+    parseData('y',y);
 }
 
 /**
@@ -121,17 +130,17 @@ void reloadCR2Params(int readOrWrite, int slaveAddr)
   }
 }
 
-void parseData(char axis, int data){
+void parseData(char axis, short data){
   //counter-clockwise = positive, clockwise = negative
-    errorLed(0,1);
+    //errorLed(0,1);
     if (axis == 'x') 
     {
-      if(data > THRESHOLD){
+      if(data > 0){
           // Blue
           GPIOC->ODR |= (1 << 7); // setting pin 7 BLUE to high
           GPIOC->ODR &= ~(1 << 6); // setting pin 6 RED to low
       }
-      else if(data < -THRESHOLD){
+      else if(data < 0){
           // Red
           GPIOC->ODR |= (1 << 6); // setting pin 6 RED to high
           GPIOC->ODR &= ~(1 << 7); // setting pin 7 BLUE to low
@@ -139,12 +148,12 @@ void parseData(char axis, int data){
     }
     else if (axis == 'y')
     {
-      if(data > THRESHOLD){
+      if(data > 0){
           // Green
           GPIOC->ODR |= (1 << 9); // setting pin 9 GREEN to high
           GPIOC->ODR &= ~(1 << 8); // setting pin 8 ORANGE to low
       }
-      else if(data < -THRESHOLD){
+      else if(data < 0){
           // Orange
           GPIOC->ODR |= (1 << 8); // setting pin 8 ORANGE to high
           GPIOC->ODR &= ~(1 << 9); // setting pin 9 GREEN to low
