@@ -40,6 +40,7 @@ void checkBreakpoint(int step);
 void errorLed(int red, int orange);
 void read();
 void write();
+void initGyro();
 
 /**
  * @brief  The application entry point.
@@ -49,18 +50,23 @@ int main(void)
 {
 
   setUp();
+  initGyro();
 
   while (1)
   {
     checkBreakpoint(1);
-    write();
-    read();
+    write(1,WHOAMI_ADDR);
+    read(1);
   }
   // reset indicator LEDs
   GPIOC->ODR &= ~(1 << 6);
   GPIOC->ODR &= ~(1 << 7);
   GPIOC->ODR &= ~(1 << 8);
   GPIOC->ODR &= ~(1 << 9);
+}
+
+void initGyro(){
+
 }
 
 /**
@@ -80,10 +86,30 @@ void reloadCR2Params(int readOrWrite, int slaveAddr)
   }
 }
 
-void read()
+void parseData(int data){
+    if (data == WHOAMI_VALUE)
+    {
+      GPIOC->ODR |= (1 << 9);    // success, turn on green LED
+      I2C2->CR2 |= I2C_CR2_STOP; // stop
+    }
+    else if ((I2C2->RXDR & I2C_RXDR_RXDATA) == 0)
+    {
+      errorLed(1, 0);
+    }
+    else
+    {
+      errorLed(1, 1);
+    }
+}
+
+void read(int restartNeeded)
 {
   reloadCR2Params(READ, DEVICE_ADDR);
+  if (restartNeeded)
+  {
   I2C2->CR2 |= I2C_CR2_START; // perform a restart condition
+  }
+  
 
   while (!(I2C2->ISR & I2C_ISR_NACKF) && !((I2C2->ISR >> 2) & 1))
   {
@@ -101,27 +127,17 @@ void read()
       HAL_Delay(200);         // leave it on for 0.2 seconds
       GPIOC->ODR &= ~(1 << 8);
     }
-    if (I2C2->RXDR == WHOAMI_VALUE)
-    {
-      GPIOC->ODR |= (1 << 9);    // success, turn on green LED
-      I2C2->CR2 |= I2C_CR2_STOP; // stop
-    }
-    else if ((I2C2->RXDR & I2C_RXDR_RXDATA) == 0)
-    {
-      errorLed(1, 0);
-    }
-
-    else
-    {
-      errorLed(1, 1);
-    }
+    parseData(I2C2->RXDR);
   }
 }
 
-void write()
+void write(int restartNeeded, int data)
 {
   reloadCR2Params(WRITE, DEVICE_ADDR);
+  if (restartNeeded)
+  {
   I2C2->CR2 |= I2C_CR2_START; // perform a restart condition
+  }
 
   while(!(I2C2->ISR & I2C_ISR_NACKF || I2C2->ISR & I2C_ISR_TXIS)){}
   if (I2C2->ISR & I2C_ISR_NACKF)
@@ -132,7 +148,7 @@ void write()
   {
     // write data into TXDR
     checkBreakpoint(2);
-    I2C2->TXDR = WHOAMI_ADDR; // Write the address of the “WHO_AM_I” register into the I2C transmit register. (TXDR)
+    I2C2->TXDR = data; // Write the address of the “WHO_AM_I” register into the I2C transmit register. (TXDR)
 
     while (!(I2C2->ISR & I2C_ISR_TC))
     {                         // waiting for TC flag #4

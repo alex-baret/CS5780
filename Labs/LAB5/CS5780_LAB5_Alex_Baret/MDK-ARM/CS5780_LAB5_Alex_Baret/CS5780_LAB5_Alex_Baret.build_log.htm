@@ -27,11 +27,30 @@ Project File Date:  03/14/2024
 <h2>Output:</h2>
 *** Using Compiler 'V6.21', folder: 'C:\Keil_v5\ARM\ARMCLANG\Bin'
 Build target 'CS5780_LAB5_Alex_Baret'
+../Core/Src/main.c(58): warning: passing arguments to 'write' without a prototype is deprecated in all versions of C and is not supported in C23 [-Wdeprecated-non-prototype]
+   58 |     write(1,WHOAMI_ADDR);
+      |          ^
+../Core/Src/main.c(59): warning: passing arguments to 'read' without a prototype is deprecated in all versions of C and is not supported in C23 [-Wdeprecated-non-prototype]
+   59 |     read(1);
+      |         ^
+../Core/Src/main.c(41): warning: a function declaration without a prototype is deprecated in all versions of C and is treated as a zero-parameter prototype in C23, conflicting with a subsequent definition [-Wdeprecated-non-prototype]
+   41 | void read();
+      |      ^
+../Core/Src/main.c(105): note: conflicting prototype is here
+  105 | void read(int restartNeeded)
+      |      ^
+../Core/Src/main.c(42): warning: a function declaration without a prototype is deprecated in all versions of C and is treated as a zero-parameter prototype in C23, conflicting with a subsequent definition [-Wdeprecated-non-prototype]
+   42 | void write();
+      |      ^
+../Core/Src/main.c(134): note: conflicting prototype is here
+  134 | void write(int restartNeeded, int data)
+      |      ^
+4 warnings generated.
 compiling main.c...
 linking...
-Program Size: Code=3886 RO-data=274 RW-data=12 ZI-data=1644  
+Program Size: Code=3902 RO-data=274 RW-data=12 ZI-data=1644  
 FromELF: creating hex file...
-"CS5780_LAB5_Alex_Baret\CS5780_LAB5_Alex_Baret.axf" - 0 Error(s), 0 Warning(s).
+"CS5780_LAB5_Alex_Baret\CS5780_LAB5_Alex_Baret.axf" - 0 Error(s), 4 Warning(s).
 
 <h2>Software Packages used:</h2>
 
