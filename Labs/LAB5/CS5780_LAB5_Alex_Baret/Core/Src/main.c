@@ -25,22 +25,24 @@
 #define WHOAMI_VALUE 0xD3
 #define WHOAMI_ADDR 0x0F
 #define CTRL_REG1_ADDR	0x20
-#define CNRL_REG1_CONFIG_VALS 0b00001011  // normal op mode, x & y axes enabled, default low-speed mode
+#define CNRL_REG1_CONFIG_VALS 0x0B  // normal op mode, x & y axes enabled, default low-speed mode
 #define X_AXIS_COMBINED_ADDR	0xA8
 #define OUT_X_L_ADDR	0x28
 #define OUT_X_H_ADDR	0x29
 #define Y_AXIS_COMBINED_ADDR	0xAA
 #define OUT_Y_L_ADDR	0x2A
 #define OUT_Y_H_ADDR	0x2B
+#define THRESHOLD 50
 
 void SystemClock_Config(void);
 void setUp();
 void reloadCR2Params(int readOrWrite, int slaveAddr);
 void checkBreakpoint(int step);
 void errorLed(int red, int orange);
-void read();
+int read();
 void write();
 void initGyro();
+void parseData(char axis, int data);
 
 /**
  * @brief  The application entry point.
@@ -54,19 +56,30 @@ int main(void)
 
   while (1)
   {
-    checkBreakpoint(1);
-    write(1,WHOAMI_ADDR);
-    read(1);
+		checkBreakpoint(1);
+    // Read from x-axis
+    write(1,X_AXIS_COMBINED_ADDR);
+    int dataX = read(1);
+    parseData('x',dataX);
+
+    // Read from y-axis
+    write(1,Y_AXIS_COMBINED_ADDR);
+    int dataY = read(1);
+    parseData('y',dataY);
+
+    HAL_Delay(100);
+
   }
-  // reset indicator LEDs
-  GPIOC->ODR &= ~(1 << 6);
-  GPIOC->ODR &= ~(1 << 7);
-  GPIOC->ODR &= ~(1 << 8);
-  GPIOC->ODR &= ~(1 << 9);
+
 }
 
+/**
+ * Initializes Gyroscope
+*/
 void initGyro(){
-
+  write(1,CTRL_REG1_ADDR); //setup write to CTRL_REG1
+  write(0,CNRL_REG1_CONFIG_VALS); //writing config values into CTRL_REG1
+	checkBreakpoint(1);
 }
 
 /**
@@ -86,27 +99,42 @@ void reloadCR2Params(int readOrWrite, int slaveAddr)
   }
 }
 
-void parseData(int data){
-    if (data == WHOAMI_VALUE)
+void parseData(char axis, int data){
+  //counter-clockwise = positive, clockwise = negative
+    if (axis == 'x') 
     {
-      GPIOC->ODR |= (1 << 9);    // success, turn on green LED
-      I2C2->CR2 |= I2C_CR2_STOP; // stop
+      if(data > THRESHOLD){
+          // Blue
+          GPIOC->ODR |= (1 << 7); // setting pin 7 BLUE to high
+          GPIOC->ODR &= ~(1 << 6); // setting pin 6 RED to low
+      }
+      else if(data < -THRESHOLD){
+          // Red
+          GPIOC->ODR |= (1 << 6); // setting pin 6 RED to high
+          GPIOC->ODR &= ~(1 << 7); // setting pin 7 BLUE to low
+      }
     }
-    else if ((I2C2->RXDR & I2C_RXDR_RXDATA) == 0)
+    else if (axis == 'y')
     {
-      errorLed(1, 0);
-    }
-    else
-    {
-      errorLed(1, 1);
+      if(data > THRESHOLD){
+          // Green
+          GPIOC->ODR |= (1 << 9); // setting pin 9 GREEN to high
+          GPIOC->ODR &= ~(1 << 8); // setting pin 8 ORANGE to low
+      }
+      else if(data < -THRESHOLD){
+          // Orange
+          GPIOC->ODR |= (1 << 8); // setting pin 8 ORANGE to high
+          GPIOC->ODR &= ~(1 << 9); // setting pin 9 GREEN to low
+      }
     }
 }
 
-void read(int restartNeeded)
+int read(int restartNeeded)
 {
-  reloadCR2Params(READ, DEVICE_ADDR);
+  //reloadCR2Params(READ, DEVICE_ADDR);
   if (restartNeeded)
   {
+	reloadCR2Params(READ, DEVICE_ADDR);
   I2C2->CR2 |= I2C_CR2_START; // perform a restart condition
   }
   
@@ -127,15 +155,18 @@ void read(int restartNeeded)
       HAL_Delay(200);         // leave it on for 0.2 seconds
       GPIOC->ODR &= ~(1 << 8);
     }
-    parseData(I2C2->RXDR);
+    I2C2->CR2 |= I2C_CR2_STOP;
+    return I2C2->RXDR;
   }
+	return 0;
 }
 
 void write(int restartNeeded, int data)
 {
-  reloadCR2Params(WRITE, DEVICE_ADDR);
+  //reloadCR2Params(WRITE, DEVICE_ADDR);
   if (restartNeeded)
   {
+	reloadCR2Params(WRITE, DEVICE_ADDR);
   I2C2->CR2 |= I2C_CR2_START; // perform a restart condition
   }
 
@@ -148,7 +179,7 @@ void write(int restartNeeded, int data)
   {
     // write data into TXDR
     checkBreakpoint(2);
-    I2C2->TXDR = data; // Write the address of the “WHO_AM_I” register into the I2C transmit register. (TXDR)
+    I2C2->TXDR = data; // write the data
 
     while (!(I2C2->ISR & I2C_ISR_TC))
     {                         // waiting for TC flag #4
