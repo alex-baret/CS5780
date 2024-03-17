@@ -39,8 +39,8 @@ void setUp();
 void reloadCR2Params(int readOrWrite, int slaveAddr);
 void checkBreakpoint(int step);
 void errorLed(int red, int orange);
-int read();
-void write();
+int read(int restartNeeded);
+void write(int restartNeeded, int data);
 void initGyro();
 void parseData(char axis, short data);
 void checkXOrientation();
@@ -61,7 +61,6 @@ int main(void)
   checkBreakpoint(1);
   while (1)
   {
-		HAL_Delay(100);
     checkXOrientation();
     checkYOrientation();
 
@@ -78,13 +77,12 @@ void checkXOrientation(){
     write(1,OUT_X_H_ADDR);
     // Read from x-axis H
     char hX = read(1);
-    // shift it 8
-    short highDataX = ((short)hX) << 8;
     // OR the two bit fields together
-    short dataX = highDataX | lowDataX; 
+    short dataX = (hX << 8 | lowDataX << 0); 
     //parse data
     x += dataX;
     parseData('x',x);
+		HAL_Delay(100); 
 }
 
 void checkYOrientation(){
@@ -96,13 +94,13 @@ void checkYOrientation(){
     write(1,OUT_Y_H_ADDR);
     // Read from y-axis H
     char hY = read(1);
-    // shift it 8
-    short highDataY = ((short)hY) << 8;
+    // shift high 8
     // OR the two bit fields together
-    short dataY = highDataY | lowDataY; 
+    short dataY = (hY << 8 | lowDataY << 0); 
     //parse data
     y += dataY;
     parseData('y',y);
+		HAL_Delay(100); // 100 ms delay
 }
 
 /**
@@ -133,20 +131,20 @@ void reloadCR2Params(int readOrWrite, int slaveAddr)
 void parseData(char axis, short data){
   //counter-clockwise = positive, clockwise = negative
     //errorLed(0,1);
-    if (axis == 'x') 
+    if (axis == 'y') 
     {
-      if(data > 0){
+      if(data < 0){
           // Blue
           GPIOC->ODR |= (1 << 7); // setting pin 7 BLUE to high
           GPIOC->ODR &= ~(1 << 6); // setting pin 6 RED to low
       }
-      else if(data < 0){
+      else if(data > 0){
           // Red
           GPIOC->ODR |= (1 << 6); // setting pin 6 RED to high
           GPIOC->ODR &= ~(1 << 7); // setting pin 7 BLUE to low
       }
     }
-    else if (axis == 'y')
+    else if (axis == 'x')
     {
       if(data > 0){
           // Green
@@ -163,13 +161,8 @@ void parseData(char axis, short data){
 
 int read(int restartNeeded)
 {
-  //reloadCR2Params(READ, DEVICE_ADDR);
- // if (restartNeeded)
- // {
 	reloadCR2Params(READ, DEVICE_ADDR);
   I2C2->CR2 |= I2C_CR2_START; // perform a restart condition
- // }
-  
 
   while (!(I2C2->ISR & I2C_ISR_NACKF) && !((I2C2->ISR >> 2) & 1))
   {

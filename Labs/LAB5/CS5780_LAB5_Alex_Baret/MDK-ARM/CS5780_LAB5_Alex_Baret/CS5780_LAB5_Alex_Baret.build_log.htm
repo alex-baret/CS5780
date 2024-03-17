@@ -27,54 +27,11 @@ Project File Date:  03/14/2024
 <h2>Output:</h2>
 *** Using Compiler 'V6.21', folder: 'C:\Keil_v5\ARM\ARMCLANG\Bin'
 Build target 'CS5780_LAB5_Alex_Baret'
-../Core/Src/main.c(74): warning: passing arguments to 'write' without a prototype is deprecated in all versions of C and is not supported in C23 [-Wdeprecated-non-prototype]
-   74 |     write(1,OUT_X_L_ADDR);
-      |          ^
-../Core/Src/main.c(76): warning: passing arguments to 'read' without a prototype is deprecated in all versions of C and is not supported in C23 [-Wdeprecated-non-prototype]
-   76 |     char lowDataX = read(1);
-      |                         ^
-../Core/Src/main.c(78): warning: passing arguments to 'write' without a prototype is deprecated in all versions of C and is not supported in C23 [-Wdeprecated-non-prototype]
-   78 |     write(1,OUT_X_H_ADDR);
-      |          ^
-../Core/Src/main.c(80): warning: passing arguments to 'read' without a prototype is deprecated in all versions of C and is not supported in C23 [-Wdeprecated-non-prototype]
-   80 |     char hX = read(1);
-      |                   ^
-../Core/Src/main.c(92): warning: passing arguments to 'write' without a prototype is deprecated in all versions of C and is not supported in C23 [-Wdeprecated-non-prototype]
-   92 |     write(1,OUT_Y_L_ADDR);
-      |          ^
-../Core/Src/main.c(94): warning: passing arguments to 'read' without a prototype is deprecated in all versions of C and is not supported in C23 [-Wdeprecated-non-prototype]
-   94 |     char lowDataY = read(1);
-      |                         ^
-../Core/Src/main.c(96): warning: passing arguments to 'write' without a prototype is deprecated in all versions of C and is not supported in C23 [-Wdeprecated-non-prototype]
-   96 |     write(1,OUT_Y_H_ADDR);
-      |          ^
-../Core/Src/main.c(98): warning: passing arguments to 'read' without a prototype is deprecated in all versions of C and is not supported in C23 [-Wdeprecated-non-prototype]
-   98 |     char hY = read(1);
-      |                   ^
-../Core/Src/main.c(112): warning: passing arguments to 'write' without a prototype is deprecated in all versions of C and is not supported in C23 [-Wdeprecated-non-prototype]
-  112 |   write(1,CTRL_REG1_ADDR); //setup write to CTRL_REG1
-      |        ^
-../Core/Src/main.c(113): warning: passing arguments to 'write' without a prototype is deprecated in all versions of C and is not supported in C23 [-Wdeprecated-non-prototype]
-  113 |   write(1,CNRL_REG1_CONFIG_VALS); //writing config values into CTRL_REG1
-      |        ^
-../Core/Src/main.c(42): warning: a function declaration without a prototype is deprecated in all versions of C and is treated as a zero-parameter prototype in C23, conflicting with a subsequent definition [-Wdeprecated-non-prototype]
-   42 | int read();
-      |     ^
-../Core/Src/main.c(164): note: conflicting prototype is here
-  164 | int read(int restartNeeded)
-      |     ^
-../Core/Src/main.c(43): warning: a function declaration without a prototype is deprecated in all versions of C and is treated as a zero-parameter prototype in C23, conflicting with a subsequent definition [-Wdeprecated-non-prototype]
-   43 | void write();
-      |      ^
-../Core/Src/main.c(196): note: conflicting prototype is here
-  196 | void write(int restartNeeded, int data)
-      |      ^
-12 warnings generated.
 compiling main.c...
 linking...
-Program Size: Code=4682 RO-data=274 RW-data=12 ZI-data=1644  
+Program Size: Code=4710 RO-data=274 RW-data=12 ZI-data=1644  
 FromELF: creating hex file...
-"CS5780_LAB5_Alex_Baret\CS5780_LAB5_Alex_Baret.axf" - 0 Error(s), 12 Warning(s).
+"CS5780_LAB5_Alex_Baret\CS5780_LAB5_Alex_Baret.axf" - 0 Error(s), 0 Warning(s).
 
 <h2>Software Packages used:</h2>
 
@@ -97,7 +54,7 @@ Package Vendor: Keil
 <h2>Collection of Component Files used:</h2>
 
    * Component: ARM::CMSIS:CORE@5.6.0
-Build Time Elapsed:  00:00:01
+Build Time Elapsed:  00:00:00
 </pre>
 </body>
 </html>
