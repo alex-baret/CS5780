@@ -43,6 +43,8 @@ int read();
 void write();
 void initGyro();
 void parseData(char axis, int data);
+void checkXOrientation();
+void checkYOrientation();
 
 /**
  * @brief  The application entry point.
@@ -53,24 +55,45 @@ int main(void)
 
   setUp();
   initGyro();
-
+  checkBreakpoint(1);
   while (1)
   {
-		checkBreakpoint(1);
-    // Read from x-axis
-    write(1,X_AXIS_COMBINED_ADDR);
-    int dataX = read(1);
-    parseData('x',dataX);
-
-    // Read from y-axis
-    write(1,Y_AXIS_COMBINED_ADDR);
-    int dataY = read(1);
-    parseData('y',dataY);
-
-    HAL_Delay(100);
+		HAL_Delay(100);
+    checkXOrientation();
+    checkYOrientation();
 
   }
 
+}
+
+void checkXOrientation(){
+    // Read from x-axis H
+    write(1,OUT_X_H_ADDR);
+    int hX = read(1);
+    // shift it 8
+    int highDataX = hX << 8;
+    // read from x-axis L
+    write(1,OUT_X_L_ADDR);
+    int lowDataX = read(1);
+    // OR the two bit fields together
+    int dataX = highDataX | lowDataX; 
+    //parse data
+    parseData('x',dataX);
+}
+
+void checkYOrientation(){
+    // Read from y-axis H
+    write(1,OUT_Y_H_ADDR);
+    int hY = read(1);
+    // shift it 8
+    int highDataY = hY << 8;
+    // read from x-axis L
+    write(1,OUT_Y_L_ADDR);
+    int lowDataY = read(1);
+    // OR the two bit fields together
+    int dataY = highDataY | lowDataY; 
+    //parse data
+    parseData('y',dataY);
 }
 
 /**
@@ -78,8 +101,7 @@ int main(void)
 */
 void initGyro(){
   write(1,CTRL_REG1_ADDR); //setup write to CTRL_REG1
-  write(0,CNRL_REG1_CONFIG_VALS); //writing config values into CTRL_REG1
-	checkBreakpoint(1);
+  write(1,CNRL_REG1_CONFIG_VALS); //writing config values into CTRL_REG1
 }
 
 /**
@@ -101,6 +123,7 @@ void reloadCR2Params(int readOrWrite, int slaveAddr)
 
 void parseData(char axis, int data){
   //counter-clockwise = positive, clockwise = negative
+    errorLed(0,1);
     if (axis == 'x') 
     {
       if(data > THRESHOLD){
@@ -132,11 +155,11 @@ void parseData(char axis, int data){
 int read(int restartNeeded)
 {
   //reloadCR2Params(READ, DEVICE_ADDR);
-  if (restartNeeded)
-  {
+ // if (restartNeeded)
+ // {
 	reloadCR2Params(READ, DEVICE_ADDR);
   I2C2->CR2 |= I2C_CR2_START; // perform a restart condition
-  }
+ // }
   
 
   while (!(I2C2->ISR & I2C_ISR_NACKF) && !((I2C2->ISR >> 2) & 1))
@@ -144,16 +167,16 @@ int read(int restartNeeded)
   } // #6 waiting for NACKF or RXNE
   if (I2C2->ISR & I2C_ISR_NACKF)
   {
-    errorLed(1, 0);
+    // errorLed(1, 0);
   }
   else if (I2C2->ISR & I2C_ISR_RXNE) // continue if RXNE is set
   {
-    checkBreakpoint(4);
+    //checkBreakpoint(4);
     while (!((I2C2->ISR >> 6) & 1))
     {                         // waiting for TC flag #4
-      GPIOC->ODR |= (1 << 8); // transmitting
-      HAL_Delay(200);         // leave it on for 0.2 seconds
-      GPIOC->ODR &= ~(1 << 8);
+     // GPIOC->ODR |= (1 << 8); // transmitting
+      //HAL_Delay(200);         // leave it on for 0.2 seconds
+     // GPIOC->ODR &= ~(1 << 8);
     }
     I2C2->CR2 |= I2C_CR2_STOP;
     return I2C2->RXDR;
@@ -163,8 +186,9 @@ int read(int restartNeeded)
 
 void write(int restartNeeded, int data)
 {
+	//errorLed(1, 0);
   //reloadCR2Params(WRITE, DEVICE_ADDR);
-  if (restartNeeded)
+ // if (restartNeeded)
   {
 	reloadCR2Params(WRITE, DEVICE_ADDR);
   I2C2->CR2 |= I2C_CR2_START; // perform a restart condition
@@ -173,19 +197,19 @@ void write(int restartNeeded, int data)
   while(!(I2C2->ISR & I2C_ISR_NACKF || I2C2->ISR & I2C_ISR_TXIS)){}
   if (I2C2->ISR & I2C_ISR_NACKF)
   { // Slave did not respond to the address frame. Maybe a wiring or configuration error.
-    errorLed(1, 0);
+   // errorLed(1, 0);
   }
   else if (I2C2->ISR & I2C_ISR_TXIS)
   {
     // write data into TXDR
-    checkBreakpoint(2);
+    // checkBreakpoint(2);
     I2C2->TXDR = data; // write the data
 
     while (!(I2C2->ISR & I2C_ISR_TC))
     {                         // waiting for TC flag #4
-      GPIOC->ODR |= (1 << 8); // transmitting
-      HAL_Delay(200);         // leave it on for 0.2 seconds
-      GPIOC->ODR &= ~(1 << 8);
+      // GPIOC->ODR |= (1 << 8); // transmitting
+      // HAL_Delay(200);         // leave it on for 0.2 seconds
+      // GPIOC->ODR &= ~(1 << 8);
     }
   }
 }
