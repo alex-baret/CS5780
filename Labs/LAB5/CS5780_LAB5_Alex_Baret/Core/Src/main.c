@@ -24,12 +24,12 @@
 #define DEVICE_ADDR 0x69
 #define WHOAMI_VALUE 0xD3
 #define WHOAMI_ADDR 0x0F
-#define CTRL_REG1_ADDR	0x20
-#define CNRL_REG1_CONFIG_VALS 0x0B  // normal op mode, x & y axes enabled, default low-speed mode
-#define OUT_X_L_ADDR	0x28
-#define OUT_X_H_ADDR	0x29
-#define OUT_Y_L_ADDR	0x2A
-#define OUT_Y_H_ADDR	0x2B
+#define CTRL_REG1_ADDR 0x20
+#define CTRL_REG1_CONFIG_VALS 0x0B // normal op mode, x & y axes enabled, default low-speed mode
+#define OUT_X_L_ADDR 0x28
+#define OUT_X_H_ADDR 0x29
+#define OUT_Y_L_ADDR 0x2A
+#define OUT_Y_H_ADDR 0x2B
 #define THRESHOLD 1000
 
 void SystemClock_Config(void);
@@ -44,7 +44,6 @@ void parseData(char axis, short data);
 void checkXOrientation();
 void checkYOrientation();
 
-
 /**
  * @brief  The application entry point.
  * @retval int
@@ -55,58 +54,90 @@ int main(void)
   initGyro();
   while (1)
   {
-		HAL_Delay(100);
+    HAL_Delay(100);
     checkXOrientation();
     checkYOrientation();
   }
-
 }
 
 /**
  * Reads from the X-Axis Data Registers on the I3G4250D.
- * 
-*/
-void checkXOrientation(){
-    // Select low x-axis reg
-    write(1,OUT_X_L_ADDR);
-    // read from x-axis L
-    char lowDataX = read(1);
-    // Select high x-axis reg
-    write(1,OUT_X_H_ADDR);
-    // Read from x-axis H
-    char hX = read(1);
-    // shift high 8
-    // OR the two bit fields together
-    short dataX = (hX << 8 | lowDataX << 0); 
-    //parse data
-    parseData('x',dataX);
+ *
+ */
+void checkXOrientation()
+{
+  // Select low x-axis reg
+  write(1, OUT_X_L_ADDR);
+  // read from x-axis L
+  char lowDataX = read(1);
+  // Select high x-axis reg
+  write(1, OUT_X_H_ADDR);
+  // Read from x-axis H
+  char hX = read(1);
+  // shift high 8
+  // OR the two bit fields together
+  short dataX = (hX << 8 | lowDataX << 0);
+  // parse data
+  parseData('x', dataX);
 }
 
 /**
  * Reads from the Y-Axis Data Registers on the I3G4250D.
-*/
-void checkYOrientation(){
-    // Select low y-axis reg
-    write(1,OUT_Y_L_ADDR);
-    // read from y-axis L
-    char lowDataY = read(1);
-    // Select high y-axis reg
-    write(1,OUT_Y_H_ADDR);
-    // Read from y-axis H
-    char hY = read(1);
-    // shift high 8
-    // OR the two bit fields together
-    short dataY = (hY << 8 | lowDataY << 0); 
-    //parse data
-    parseData('y',dataY);
+ */
+void checkYOrientation()
+{
+  // Select low y-axis reg
+  write(1, OUT_Y_L_ADDR);
+  // read from y-axis L
+  char lowDataY = read(1);
+  // Select high y-axis reg
+  write(1, OUT_Y_H_ADDR);
+  // Read from y-axis H
+  char hY = read(1);
+  // shift high 8
+  // OR the two bit fields together
+  short dataY = (hY << 8 | lowDataY << 0);
+  // parse data
+  parseData('y', dataY);
 }
 
 /**
- * Initializes Gyroscope
-*/
-void initGyro(){
-  write(1,CTRL_REG1_ADDR); //setup write to CTRL_REG1
-  write(1,CNRL_REG1_CONFIG_VALS); //writing config values into CTRL_REG1
+ * Initializes Gyroscope from flow in Figure 5.7
+ */
+void initGyro()
+{
+  I2C2->CR2 &= ~((0x7F << 16) | (0x3FF << 0)); // Clear the NBYTES and SADD bit field. The NBYTES field begins at bit 16, the SADD at bit 0
+  I2C2->CR2 |= (2 << 16) | (DEVICE_ADDR << 1); // Set NBYTES = 2 and SADD = 0x69
+  I2C2->CR2 &= ~(1 << 10);                     // clearing the RD_WRN bit to indicate a write operation
+  I2C2->CR2 |= I2C_CR2_START;                  // perform a restart condition
+
+  while (!(I2C2->ISR & I2C_ISR_NACKF || I2C2->ISR & I2C_ISR_TXIS))
+  {
+  }
+  if (I2C2->ISR & I2C_ISR_NACKF)
+  { // Slave did not respond to the address frame. Maybe a wiring or configuration error.
+  }
+  else if (I2C2->ISR & I2C_ISR_TXIS)
+  {
+    // write data into TXDR
+    I2C2->TXDR = CTRL_REG1_ADDR;
+  }
+
+  while (!(I2C2->ISR & I2C_ISR_NACKF || I2C2->ISR & I2C_ISR_TXIS))
+  {
+  }
+  if (I2C2->ISR & I2C_ISR_NACKF)
+  { // Slave did not respond to the address frame. Maybe a wiring or configuration error.
+  }
+  else if (I2C2->ISR & I2C_ISR_TXIS)
+  {
+    // write data into TXDR
+    I2C2->TXDR = CTRL_REG1_CONFIG_VALS;
+
+    while (!(I2C2->ISR & I2C_ISR_TC))
+    {
+    }
+  }
 }
 
 /**
@@ -117,7 +148,7 @@ void reloadCR2Params(int readOrWrite, int slaveAddr)
   I2C2->CR2 &= ~((0x7F << 16) | (0x3FF << 0)); // Clear the NBYTES and SADD bit field. The NBYTES field begins at bit 16, the SADD at bit 0
   I2C2->CR2 |= (1 << 16) | (slaveAddr << 1);   // Set NBYTES = 1 and SADD = 0x69
   if (readOrWrite)
-  {                          
+  {
     I2C2->CR2 &= ~(1 << 10); // clearing the RD_WRN bit to indicate a write operation
   }
   else
@@ -128,43 +159,48 @@ void reloadCR2Params(int readOrWrite, int slaveAddr)
 
 /**
  * Turns LEDs on/off depending on current x and y values.
-*/
-void parseData(char axis, short data){
-  //counter-clockwise = positive, clockwise = negative
-    if (axis == 'y') 
+ */
+void parseData(char axis, short data)
+{
+  // counter-clockwise = positive, clockwise = negative
+  if (axis == 'y')
+  {
+    if (data < THRESHOLD)
     {
-      if(data < THRESHOLD){
-          // Blue
-          GPIOC->ODR |= (1 << 7); // setting pin 7 BLUE to high
-          GPIOC->ODR &= ~(1 << 6); // setting pin 6 RED to low
-      }
-      else if(data > THRESHOLD){
-          // Red
-          GPIOC->ODR |= (1 << 6); // setting pin 6 RED to high
-          GPIOC->ODR &= ~(1 << 7); // setting pin 7 BLUE to low
-      }
+      // Blue
+      GPIOC->ODR |= (1 << 7);  // setting pin 7 BLUE to high
+      GPIOC->ODR &= ~(1 << 6); // setting pin 6 RED to low
     }
-    else if (axis == 'x')
+    else if (data > THRESHOLD)
     {
-      if(data > THRESHOLD){
-          // Green
-          GPIOC->ODR |= (1 << 9); // setting pin 9 GREEN to high
-          GPIOC->ODR &= ~(1 << 8); // setting pin 8 ORANGE to low
-      }
-      else if(data < THRESHOLD){
-          // Orange
-          GPIOC->ODR |= (1 << 8); // setting pin 8 ORANGE to high
-          GPIOC->ODR &= ~(1 << 9); // setting pin 9 GREEN to low
-      }
+      // Red
+      GPIOC->ODR |= (1 << 6);  // setting pin 6 RED to high
+      GPIOC->ODR &= ~(1 << 7); // setting pin 7 BLUE to low
     }
+  }
+  else if (axis == 'x')
+  {
+    if (data > THRESHOLD)
+    {
+      // Green
+      GPIOC->ODR |= (1 << 9);  // setting pin 9 GREEN to high
+      GPIOC->ODR &= ~(1 << 8); // setting pin 8 ORANGE to low
+    }
+    else if (data < THRESHOLD)
+    {
+      // Orange
+      GPIOC->ODR |= (1 << 8);  // setting pin 8 ORANGE to high
+      GPIOC->ODR &= ~(1 << 9); // setting pin 9 GREEN to low
+    }
+  }
 }
 
 /**
  * Reads from slave device using I2C protocol
-*/
+ */
 int read(int restartNeeded)
 {
-	reloadCR2Params(READ, DEVICE_ADDR);
+  reloadCR2Params(READ, DEVICE_ADDR);
   I2C2->CR2 |= I2C_CR2_START; // perform a restart condition
 
   while (!(I2C2->ISR & I2C_ISR_NACKF) && !((I2C2->ISR >> 2) & 1))
@@ -176,26 +212,28 @@ int read(int restartNeeded)
   }
   else if (I2C2->ISR & I2C_ISR_RXNE) // continue if RXNE is set
   {
-    //checkBreakpoint(4);
+    // checkBreakpoint(4);
     while (!((I2C2->ISR >> 6) & 1))
-    {                        }
+    {
+    }
     I2C2->CR2 |= I2C_CR2_STOP;
     return I2C2->RXDR;
   }
-	return 0;
+  return 0;
 }
 
 /**
  * Writes `data` to slave device using I2C protocol
-*/
+ */
 void write(int restartNeeded, int data)
 {
-  {
-	reloadCR2Params(WRITE, DEVICE_ADDR);
-  I2C2->CR2 |= I2C_CR2_START; // perform a restart condition
-  }
 
-  while(!(I2C2->ISR & I2C_ISR_NACKF || I2C2->ISR & I2C_ISR_TXIS)){}
+  reloadCR2Params(WRITE, DEVICE_ADDR);
+  I2C2->CR2 |= I2C_CR2_START; // perform a restart condition
+
+  while (!(I2C2->ISR & I2C_ISR_NACKF || I2C2->ISR & I2C_ISR_TXIS))
+  {
+  }
   if (I2C2->ISR & I2C_ISR_NACKF)
   { // Slave did not respond to the address frame. Maybe a wiring or configuration error.
   }
@@ -205,7 +243,7 @@ void write(int restartNeeded, int data)
     I2C2->TXDR = data;
 
     while (!(I2C2->ISR & I2C_ISR_TC))
-    {                        
+    {
     }
   }
 }
@@ -228,7 +266,7 @@ void checkBreakpoint(int step)
 
 /**
  * Optional error checking with red and orange LEDs
-*/
+ */
 void errorLed(int red, int orange)
 {
   if (red)
@@ -320,7 +358,7 @@ void setUp()
   // Setting TIMINGR register parameters to 100kHz standard-mode I2C
   I2C2->TIMINGR = 0x1042F013;
   // enable I2C2 peripheral
-  I2C2->CR1 |= I2C_CR1_PE; 
+  I2C2->CR1 |= I2C_CR1_PE;
 }
 
 /**
