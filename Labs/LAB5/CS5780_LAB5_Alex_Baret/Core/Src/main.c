@@ -26,10 +26,8 @@
 #define WHOAMI_ADDR 0x0F
 #define CTRL_REG1_ADDR	0x20
 #define CNRL_REG1_CONFIG_VALS 0x0B  // normal op mode, x & y axes enabled, default low-speed mode
-#define X_AXIS_COMBINED_ADDR	0xA8
 #define OUT_X_L_ADDR	0x28
 #define OUT_X_H_ADDR	0x29
-#define Y_AXIS_COMBINED_ADDR	0xAA
 #define OUT_Y_L_ADDR	0x2A
 #define OUT_Y_H_ADDR	0x2B
 #define THRESHOLD 1000
@@ -53,7 +51,6 @@ void checkYOrientation();
  */
 int main(void)
 {
-
   setUp();
   initGyro();
   while (1)
@@ -61,13 +58,12 @@ int main(void)
 		HAL_Delay(100);
     checkXOrientation();
     checkYOrientation();
-
   }
 
 }
 
 /**
- * Reads from the X-Axis Data Registers on the I3G4250D and updates the current x direction.
+ * Reads from the X-Axis Data Registers on the I3G4250D.
  * 
 */
 void checkXOrientation(){
@@ -79,14 +75,16 @@ void checkXOrientation(){
     write(1,OUT_X_H_ADDR);
     // Read from x-axis H
     char hX = read(1);
+    // shift high 8
     // OR the two bit fields together
     short dataX = (hX << 8 | lowDataX << 0); 
     //parse data
-    //x += dataX;
     parseData('x',dataX);
-		//HAL_Delay(100); 
 }
 
+/**
+ * Reads from the Y-Axis Data Registers on the I3G4250D.
+*/
 void checkYOrientation(){
     // Select low y-axis reg
     write(1,OUT_Y_L_ADDR);
@@ -100,9 +98,7 @@ void checkYOrientation(){
     // OR the two bit fields together
     short dataY = (hY << 8 | lowDataY << 0); 
     //parse data
-    //y += dataY;
     parseData('y',dataY);
-		//HAL_Delay(100); // 100 ms delay
 }
 
 /**
@@ -121,7 +117,7 @@ void reloadCR2Params(int readOrWrite, int slaveAddr)
   I2C2->CR2 &= ~((0x7F << 16) | (0x3FF << 0)); // Clear the NBYTES and SADD bit field. The NBYTES field begins at bit 16, the SADD at bit 0
   I2C2->CR2 |= (1 << 16) | (slaveAddr << 1);   // Set NBYTES = 1 and SADD = 0x69
   if (readOrWrite)
-  {                          // if true writing
+  {                          
     I2C2->CR2 &= ~(1 << 10); // clearing the RD_WRN bit to indicate a write operation
   }
   else
@@ -135,7 +131,6 @@ void reloadCR2Params(int readOrWrite, int slaveAddr)
 */
 void parseData(char axis, short data){
   //counter-clockwise = positive, clockwise = negative
-    //errorLed(0,1);
     if (axis == 'y') 
     {
       if(data < THRESHOLD){
@@ -164,6 +159,9 @@ void parseData(char axis, short data){
     }
 }
 
+/**
+ * Reads from slave device using I2C protocol
+*/
 int read(int restartNeeded)
 {
 	reloadCR2Params(READ, DEVICE_ADDR);
@@ -180,22 +178,18 @@ int read(int restartNeeded)
   {
     //checkBreakpoint(4);
     while (!((I2C2->ISR >> 6) & 1))
-    {                         // waiting for TC flag #4
-     // GPIOC->ODR |= (1 << 8); // transmitting
-      //HAL_Delay(200);         // leave it on for 0.2 seconds
-     // GPIOC->ODR &= ~(1 << 8);
-    }
+    {                        }
     I2C2->CR2 |= I2C_CR2_STOP;
     return I2C2->RXDR;
   }
 	return 0;
 }
 
+/**
+ * Writes `data` to slave device using I2C protocol
+*/
 void write(int restartNeeded, int data)
 {
-	//errorLed(1, 0);
-  //reloadCR2Params(WRITE, DEVICE_ADDR);
- // if (restartNeeded)
   {
 	reloadCR2Params(WRITE, DEVICE_ADDR);
   I2C2->CR2 |= I2C_CR2_START; // perform a restart condition
@@ -204,19 +198,14 @@ void write(int restartNeeded, int data)
   while(!(I2C2->ISR & I2C_ISR_NACKF || I2C2->ISR & I2C_ISR_TXIS)){}
   if (I2C2->ISR & I2C_ISR_NACKF)
   { // Slave did not respond to the address frame. Maybe a wiring or configuration error.
-   // errorLed(1, 0);
   }
   else if (I2C2->ISR & I2C_ISR_TXIS)
   {
     // write data into TXDR
-    // checkBreakpoint(2);
-    I2C2->TXDR = data; // write the data
+    I2C2->TXDR = data;
 
     while (!(I2C2->ISR & I2C_ISR_TC))
-    {                         // waiting for TC flag #4
-      // GPIOC->ODR |= (1 << 8); // transmitting
-      // HAL_Delay(200);         // leave it on for 0.2 seconds
-      // GPIOC->ODR &= ~(1 << 8);
+    {                        
     }
   }
 }
@@ -237,6 +226,9 @@ void checkBreakpoint(int step)
   HAL_Delay(500);
 }
 
+/**
+ * Optional error checking with red and orange LEDs
+*/
 void errorLed(int red, int orange)
 {
   if (red)
@@ -264,7 +256,6 @@ void setUp()
   HAL_Init(); // Reset of all peripherals, Initializes the Flash interface and the Systick.
 
   /* === Clock Settings === */
-
   SystemClock_Config(); // Configure the system clock
 
   RCC->AHBENR |= RCC_AHBENR_GPIOBEN;  // Enable the system clock for the GPIOC peripheral
@@ -326,17 +317,10 @@ void setUp()
   GPIOC->ODR &= ~(1 << 9); // setting pin 9 to low
 
   /* === I2C Settings === */
-
   // Setting TIMINGR register parameters to 100kHz standard-mode I2C
-  // I2C2->TIMINGR |= (0x1 << I2C_TIMINGR_PRESC_Pos);
-  // I2C2->TIMINGR |= (0x13 << I2C_TIMINGR_SCLL_Pos);
-  // I2C2->TIMINGR |= (0x0F << I2C_TIMINGR_SCLH_Pos);
-  // I2C2->TIMINGR |= (0x2 << I2C_TIMINGR_SDADEL_Pos);
-  // I2C2->TIMINGR |= (0x4 << I2C_TIMINGR_SCLDEL_Pos);
-
   I2C2->TIMINGR = 0x1042F013;
-
-  I2C2->CR1 |= I2C_CR1_PE; // enable I2C2 peripheral
+  // enable I2C2 peripheral
+  I2C2->CR1 |= I2C_CR1_PE; 
 }
 
 /**
