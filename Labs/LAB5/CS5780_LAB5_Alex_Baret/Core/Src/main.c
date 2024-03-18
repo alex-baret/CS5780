@@ -32,7 +32,7 @@
 #define Y_AXIS_COMBINED_ADDR	0xAA
 #define OUT_Y_L_ADDR	0x2A
 #define OUT_Y_H_ADDR	0x2B
-#define THRESHOLD 50
+#define THRESHOLD 1000
 
 void SystemClock_Config(void);
 void setUp();
@@ -46,8 +46,6 @@ void parseData(char axis, short data);
 void checkXOrientation();
 void checkYOrientation();
 
-volatile short x = 0;
-volatile short y = 0;
 
 /**
  * @brief  The application entry point.
@@ -58,9 +56,9 @@ int main(void)
 
   setUp();
   initGyro();
-  checkBreakpoint(1);
   while (1)
   {
+		HAL_Delay(100);
     checkXOrientation();
     checkYOrientation();
 
@@ -68,6 +66,10 @@ int main(void)
 
 }
 
+/**
+ * Reads from the X-Axis Data Registers on the I3G4250D and updates the current x direction.
+ * 
+*/
 void checkXOrientation(){
     // Select low x-axis reg
     write(1,OUT_X_L_ADDR);
@@ -80,9 +82,9 @@ void checkXOrientation(){
     // OR the two bit fields together
     short dataX = (hX << 8 | lowDataX << 0); 
     //parse data
-    x += dataX;
-    parseData('x',x);
-		HAL_Delay(100); 
+    //x += dataX;
+    parseData('x',dataX);
+		//HAL_Delay(100); 
 }
 
 void checkYOrientation(){
@@ -98,9 +100,9 @@ void checkYOrientation(){
     // OR the two bit fields together
     short dataY = (hY << 8 | lowDataY << 0); 
     //parse data
-    y += dataY;
-    parseData('y',y);
-		HAL_Delay(100); // 100 ms delay
+    //y += dataY;
+    parseData('y',dataY);
+		//HAL_Delay(100); // 100 ms delay
 }
 
 /**
@@ -128,17 +130,20 @@ void reloadCR2Params(int readOrWrite, int slaveAddr)
   }
 }
 
+/**
+ * Turns LEDs on/off depending on current x and y values.
+*/
 void parseData(char axis, short data){
   //counter-clockwise = positive, clockwise = negative
     //errorLed(0,1);
     if (axis == 'y') 
     {
-      if(data < 0){
+      if(data < THRESHOLD){
           // Blue
           GPIOC->ODR |= (1 << 7); // setting pin 7 BLUE to high
           GPIOC->ODR &= ~(1 << 6); // setting pin 6 RED to low
       }
-      else if(data > 0){
+      else if(data > THRESHOLD){
           // Red
           GPIOC->ODR |= (1 << 6); // setting pin 6 RED to high
           GPIOC->ODR &= ~(1 << 7); // setting pin 7 BLUE to low
@@ -146,12 +151,12 @@ void parseData(char axis, short data){
     }
     else if (axis == 'x')
     {
-      if(data > 0){
+      if(data > THRESHOLD){
           // Green
           GPIOC->ODR |= (1 << 9); // setting pin 9 GREEN to high
           GPIOC->ODR &= ~(1 << 8); // setting pin 8 ORANGE to low
       }
-      else if(data < 0){
+      else if(data < THRESHOLD){
           // Orange
           GPIOC->ODR |= (1 << 8); // setting pin 8 ORANGE to high
           GPIOC->ODR &= ~(1 << 9); // setting pin 9 GREEN to low
