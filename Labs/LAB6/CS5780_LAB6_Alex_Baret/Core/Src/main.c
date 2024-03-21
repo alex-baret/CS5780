@@ -40,7 +40,6 @@ int main(void)
   while (1)
   {
 		parseData(ADC1->DR);
-		
   }
 }
 
@@ -108,10 +107,6 @@ void setUp()
  
 
   // /* === GPIO Settings === */
-
-  //GPIOC->OTYPER &= ~(1 << 0); // setting PC0 to push/pull output (clearing 0th bit for PC0 in OTYPER)
-
-
   // configure the LEDs Pins
   GPIOC->MODER |= (1 << 12); // setting PC6 to general output RED
   GPIOC->MODER |= (1 << 14); // setting PC7 to general output BLUE
@@ -162,7 +157,7 @@ void setUp()
 	ADC1->CFGR1 &= ~(1 << 11);
 	
   // configuring the channel 0
-  ADC1->CR |= ADC_CHSELR_CHSEL10;
+  ADC1->CHSELR |= ADC_CHSELR_CHSEL10;
 
   /* === ADC Calibration === */
   /* (1) Ensure that ADEN = 0 */
