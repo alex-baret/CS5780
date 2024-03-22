@@ -37,9 +37,20 @@ int main(void)
 {
   setUp();
 
+  // Sine Wave: 8-bit, 32 samples/cycle
+const uint8_t sine_table[32] = {127,151,175,197,216,232,244,251,254,251,244,
+232,216,197,175,151,127,102,78,56,37,21,9,2,0,2,9,21,37,56,78,102};
+  int index = 0;
+	
   while (1)
   {
-		parseData(ADC1->DR);
+		if(index == 31){
+			index = 0;
+		}
+		// parseData(ADC1->DR);
+    DAC1->DHR8R1 = sine_table[index];
+    index++;
+		HAL_Delay(100);
   }
 }
 
@@ -104,6 +115,7 @@ void setUp()
   SystemClock_Config(); // Configure the system clock
 
   RCC->AHBENR |= RCC_AHBENR_GPIOCEN; // Enable the system clock for the GPIOC peripheral
+
  
 
   // /* === GPIO Settings === */
@@ -198,7 +210,30 @@ void setUp()
 	
 	//start
 	ADC1->CR |= ADC_CR_ADSTART;
+
+
+  /* Initializing the DAC*/
+ /* === DAC Settings === */
+
+  RCC->AHBENR |= RCC_AHBENR_GPIOAEN; // Enable the system clock for the GPIOC peripheral
+
+  // setting PA4 to analog
+  GPIOA->MODER |= (1 << 8); // setting 9th
+  GPIOA->MODER |= (1 << 9); // setting 10th
+
+  // setting PA4 to to no pull-up/down resistors
+  GPIOA->PUPDR &= ~(1 << 9); // clearing 9th bit
+  GPIOA->PUPDR &= ~(1 << 10); // clearing 10th bit
 	
+  RCC->APB1ENR |= RCC_APB1ENR_DACEN; // Enable system clock for DAC peripheral
+
+  // set channel 1 to software trigger
+  //DAC1->SWTRIGR |= DAC_SWTRIGR_SWTRIG1; //setting 0th for channel 1 software trigger
+	
+	DAC1->CR |= DAC_CR_TSEL1;
+
+  //enable DAC1
+  DAC1->CR |= DAC_CR_EN1;
 }
 
 /**
